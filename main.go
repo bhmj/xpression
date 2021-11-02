@@ -169,7 +169,7 @@ func parseExpression(path []byte, i int) ([]*Token, error) {
 	for i < l {
 		i, tok, err = readNextToken(path, i, prevOperator)
 		if err != nil {
-			return nil, fmt.Errorf("%w at %d: %c", err, i, path[i])
+			return nil, fmt.Errorf("%w at %d: %s", err, i, getLastWord(path[i:]))
 		}
 		if tok != nil {
 			prevOperator = tok.Operator
@@ -271,7 +271,7 @@ func readNextToken(path []byte, i int, prevOperator Operator) (int, *Token, erro
 		return readNull(path, i)
 	}
 
-	return i, nil, errInvalidCharacter
+	return i, nil, errUnknownToken
 }
 
 func skipSpaces(input []byte, i int) (int, error) {

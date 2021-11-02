@@ -9,7 +9,7 @@ func readNumber(path []byte, i int) (int, *Token, error) {
 	e := skipNumber(path, i)
 	f, err := strconv.ParseFloat(string(path[i:e]), 64)
 	if err != nil {
-		return e, nil, err
+		return i, nil, err
 	}
 	return e, &Token{Category: tcLiteral, Type: ltNumber, Number: f}, nil
 }
@@ -30,7 +30,7 @@ func readString(path []byte, i int) (int, *Token, error) {
 		i++
 	}
 	if i == l && !done {
-		return i, nil, errUnexpectedStringEnd
+		return s, nil, errUnexpectedStringEnd
 	}
 	e := i
 	i++ // unquote
@@ -39,37 +39,20 @@ func readString(path []byte, i int) (int, *Token, error) {
 }
 
 func readBool(path []byte, i int) (int, *Token, error) {
-	s := i
-	e, err := skipBoolNull(path, i)
-	if err != nil {
-		return i, nil, err
+	needles := [...][]byte{[]byte("false"), []byte("true")}
+	for n := 0; n < len(needles); n++ {
+		if matchSubslice(path[i:], needles[n]) {
+			return i + len(needles[n]), &Token{Category: tcLiteral, Type: ltBoolean, Bool: n > 0}, nil
+		}
 	}
-	b, ok := map[string]bool{"true": true, "false": false}[string(path[s:e])]
-	if !ok {
-		return i, nil, errUnknownToken
-	}
-	return e, &Token{Category: tcLiteral, Type: ltBoolean, Bool: b}, nil
+	return i, nil, errUnknownToken
 }
 
 func readNull(path []byte, i int) (int, *Token, error) {
-	s := i
-	l := len(path)
-	if l-i < 4 {
-		return i, nil, errUnknownToken
+	if matchSubslice(path[i:], []byte("null")) {
+		return i + 4, &Token{Category: tcLiteral, Type: ltNull}, nil
 	}
-	null := []byte("null")
-	diff := false
-	for i-s < 4 && !diff {
-		if path[i] != null[i-s] {
-			diff = true
-		}
-		i++
-	}
-	if diff {
-		return i, nil, errUnrecognizedValue
-	}
-
-	return i, &Token{Category: tcLiteral, Type: ltNull}, nil
+	return i, nil, errUnknownToken
 }
 
 func readRegexp(path []byte, i int) (int, *Token, error) {
@@ -107,23 +90,26 @@ func readRegexp(path []byte, i int) (int, *Token, error) {
 
 func skipNumber(input []byte, i int) int {
 	l := len(input)
-	for ; i < l; i++ {
-		ch := input[i]
-		if !((ch >= '0' && ch <= '9') || ch == '.' || ch == '-' || ch == 'E' || ch == 'e') {
-			break
-		}
+	if i < l && input[i] == '-' {
+		i++
+	}
+	for ; i < l && input[i] >= '0' && input[i] <= '9'; i++ {
+	}
+	for ; i < l && input[i] == '.'; i++ {
+	}
+	for ; i < l && input[i] >= '0' && input[i] <= '9'; i++ {
+	}
+	if i < l && (input[i] == 'E' || input[i] == 'e') {
+		i++
+	} else {
+		return i
+	}
+	if i < l && (input[i] == '+' || input[i] == '-') {
+		i++
+	}
+	for ; i < l && (input[i] >= '0' && input[i] <= '9'); i++ {
 	}
 	return i
-}
-
-func skipBoolNull(input []byte, i int) (int, error) {
-	needles := [...][]byte{[]byte("true"), []byte("false"), []byte("null")}
-	for n := 0; n < len(needles); n++ {
-		if matchSubslice(input[i:], needles[n]) {
-			return i + len(needles[n]), nil
-		}
-	}
-	return i, errUnrecognizedValue
 }
 
 func matchSubslice(str, needle []byte) bool {
@@ -137,4 +123,11 @@ func matchSubslice(str, needle []byte) bool {
 		}
 	}
 	return true
+}
+
+func getLastWord(path []byte) string {
+	i := 0
+	for ; i < len(path) && path[i] != ' ' && path[i] != '\t' && path[i] != '\r'; i++ {
+	}
+	return string(path[:i])
 }
