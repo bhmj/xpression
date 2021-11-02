@@ -25,7 +25,7 @@ Not yet.
 
 ## Changelog
 
-**0.4.0** (2021-11-02) -- Expression evaluation.
+**0.4.0** (2021-11-02) -- Expression evaluation.  
 **0.3.0** (2021-11-01) -- MVP.
 
 ## Roadmap
