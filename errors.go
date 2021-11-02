@@ -6,7 +6,8 @@ var (
 	errUnexpectedEnd,
 	errUnknownToken,
 	errUnexpectedStringEnd,
-	errMismatchedParentheses error
+	errMismatchedParentheses,
+	errNotEnoughArguments error
 )
 
 func init() {
@@ -14,4 +15,5 @@ func init() {
 	errUnknownToken = errors.New("unknown token")
 	errUnexpectedStringEnd = errors.New("unexpected end of string")
 	errMismatchedParentheses = errors.New("mismatched parentheses")
+	errNotEnoughArguments = errors.New("not enough arguments")
 }

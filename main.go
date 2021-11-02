@@ -7,10 +7,10 @@ import (
 	"regexp"
 )
 
-type Operator byte
-
-type TokenCategory byte
-type LiteralType byte
+type Operator byte      // list of operators: + - * / < > == !=
+type TokenCategory byte // operator, literal (operand), parentheses
+type OperandType byte   // string, number, boolean, null, undefined
+type Associativity byte // left, right
 
 const (
 	opNone             Operator = '\x00'
@@ -41,22 +41,24 @@ const (
 	opUnaryMinus       Operator = '_'
 	opLeftParenthesis  Operator = '('
 	opRightParenthesis Operator = ')'
-
-	tcLiteral          TokenCategory = iota // string, number, bool
-	tcOperator                              // +-*/^!<=>
-	tcLeftParenthesis                       //
-	tcRightParenthesis                      //
-	tcNodeRef                               // @.key
-
-	ltString LiteralType = iota
-	ltNumber
-	ltBoolean
-	ltNull
-	ltUndefined
-	ltRegexp
 )
 
-type Associativity byte
+const (
+	tcLiteral          TokenCategory = 1 << iota // string, number, bool
+	tcOperator                                   // +-*/^!<=>
+	tcLeftParenthesis                            //
+	tcRightParenthesis                           //
+	tcNodeRef                                    // @.key
+)
+
+const (
+	otString OperandType = 1 << iota
+	otNumber
+	otBoolean
+	otNull
+	otUndefined
+	otRegexp
+)
 
 const (
 	aLeft Associativity = iota
@@ -66,6 +68,7 @@ const (
 type OperatorDetail struct {
 	Associativity Associativity
 	Precedence    int
+	Arguments     int
 }
 
 var operatorSpelling = []struct {
@@ -103,44 +106,48 @@ var operatorSpelling = []struct {
 }
 
 var operatorDetails = map[Operator]OperatorDetail{
-	opLogicalOR:        {aLeft, 1},   // logical OR
-	opLogicalAND:       {aLeft, 2},   // logical AND
-	opBitwiseOR:        {aLeft, 3},   // bitwise OR
-	opBitwiseXOR:       {aLeft, 4},   // bitwise XOR
-	opBitwiseAND:       {aLeft, 5},   // bitwise AND
-	opEqual:            {aLeft, 6},   // ==
-	opStrictEqual:      {aLeft, 6},   // ===
-	opNotEqual:         {aLeft, 6},   // !=
-	opStrictNotEqual:   {aLeft, 6},   // !==
-	opGE:               {aLeft, 7},   // >=
-	opG:                {aLeft, 7},   // >
-	opLE:               {aLeft, 7},   // <=
-	opL:                {aLeft, 7},   // <
-	opRegexMatch:       {aLeft, 7},   // ~=
-	opNotRegexMatch:    {aLeft, 7},   // !~=
-	opShiftRight:       {aLeft, 8},   // >>
-	opShiftLeft:        {aLeft, 8},   // <<
-	opPlus:             {aLeft, 9},   // +
-	opMinus:            {aLeft, 9},   // -
-	opMultiply:         {aLeft, 10},  // *
-	opDivide:           {aLeft, 10},  // /
-	opExponentiation:   {aRight, 11}, // **
-	opLogicalNOT:       {aLeft, 12},  // logical NOT (!)
-	opBitwiseNOT:       {aLeft, 12},  // bitwise NOT (~)
-	opUnaryMinus:       {aLeft, 12},  // unary -
-	opLeftParenthesis:  {aLeft, 13},  // (
-	opRightParenthesis: {aLeft, 13},  // )
+	opLogicalOR:        {aLeft, 1, 2},   // logical OR
+	opLogicalAND:       {aLeft, 2, 2},   // logical AND
+	opBitwiseOR:        {aLeft, 3, 2},   // bitwise OR
+	opBitwiseXOR:       {aLeft, 4, 2},   // bitwise XOR
+	opBitwiseAND:       {aLeft, 5, 2},   // bitwise AND
+	opEqual:            {aLeft, 6, 2},   // ==
+	opStrictEqual:      {aLeft, 6, 2},   // ===
+	opNotEqual:         {aLeft, 6, 2},   // !=
+	opStrictNotEqual:   {aLeft, 6, 2},   // !==
+	opGE:               {aLeft, 7, 2},   // >=
+	opG:                {aLeft, 7, 2},   // >
+	opLE:               {aLeft, 7, 2},   // <=
+	opL:                {aLeft, 7, 2},   // <
+	opRegexMatch:       {aLeft, 7, 2},   // ~=
+	opNotRegexMatch:    {aLeft, 7, 2},   // !~=
+	opShiftRight:       {aLeft, 8, 2},   // >>
+	opShiftLeft:        {aLeft, 8, 2},   // <<
+	opPlus:             {aLeft, 9, 2},   // +
+	opMinus:            {aLeft, 9, 2},   // -
+	opMultiply:         {aLeft, 10, 2},  // *
+	opDivide:           {aLeft, 10, 2},  // /
+	opExponentiation:   {aRight, 11, 2}, // **
+	opLogicalNOT:       {aLeft, 12, 1},  // logical NOT (!)
+	opBitwiseNOT:       {aLeft, 12, 1},  // bitwise NOT (~)
+	opUnaryMinus:       {aLeft, 12, 1},  // unary -
+	opLeftParenthesis:  {aLeft, 13, 2},  // (
+	opRightParenthesis: {aLeft, 13, 2},  // )
+}
+
+type Operand struct {
+	Type   OperandType
+	Str    []byte
+	Number float64
+	Bool   bool
+	Regexp *regexp.Regexp
+	// + node reference
 }
 
 type Token struct {
 	Category TokenCategory
 	Operator Operator
-	Type     LiteralType
-	Str      []byte
-	Number   float64
-	Bool     bool
-	Regexp   *regexp.Regexp
-	// + node reference
+	Operand
 }
 
 func main() {
@@ -155,6 +162,13 @@ func main() {
 		fmt.Printf("Error: %v\n", err)
 	} else {
 		printParsedExpression(tokens)
+
+		result, _, err := evaluateExpression(tokens)
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+		} else {
+			printParsedExpression([]*Token{{Category: tcLiteral, Operand: *result}})
+		}
 	}
 }
 
@@ -302,13 +316,13 @@ func printParsedExpression(tokens []*Token) {
 		switch tok.Category {
 		case tcLiteral:
 			switch tok.Type {
-			case ltString:
+			case otString:
 				fmt.Printf("\"%s\"", string(tok.Str))
-			case ltNumber:
+			case otNumber:
 				fmt.Printf("%v", tok.Number)
-			case ltBoolean:
+			case otBoolean:
 				fmt.Printf("%v", tok.Bool)
-			case ltRegexp:
+			case otRegexp:
 				fmt.Printf("/%s/", tok.Regexp.String())
 			}
 		case tcOperator:

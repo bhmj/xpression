@@ -11,7 +11,7 @@ func readNumber(path []byte, i int) (int, *Token, error) {
 	if err != nil {
 		return i, nil, err
 	}
-	return e, &Token{Category: tcLiteral, Type: ltNumber, Number: f}, nil
+	return e, &Token{Category: tcLiteral, Operand: Operand{Type: otNumber, Number: f}}, nil
 }
 
 func readString(path []byte, i int) (int, *Token, error) {
@@ -35,14 +35,14 @@ func readString(path []byte, i int) (int, *Token, error) {
 	e := i
 	i++ // unquote
 
-	return i, &Token{Category: tcLiteral, Type: ltString, Str: path[s:e]}, nil
+	return i, &Token{Category: tcLiteral, Operand: Operand{Type: otString, Str: path[s:e]}}, nil
 }
 
 func readBool(path []byte, i int) (int, *Token, error) {
 	needles := [...][]byte{[]byte("false"), []byte("true")}
 	for n := 0; n < len(needles); n++ {
 		if matchSubslice(path[i:], needles[n]) {
-			return i + len(needles[n]), &Token{Category: tcLiteral, Type: ltBoolean, Bool: n > 0}, nil
+			return i + len(needles[n]), &Token{Category: tcLiteral, Operand: Operand{Type: otBoolean, Bool: n > 0}}, nil
 		}
 	}
 	return i, nil, errUnknownToken
@@ -50,7 +50,7 @@ func readBool(path []byte, i int) (int, *Token, error) {
 
 func readNull(path []byte, i int) (int, *Token, error) {
 	if matchSubslice(path[i:], []byte("null")) {
-		return i + 4, &Token{Category: tcLiteral, Type: ltNull}, nil
+		return i + 4, &Token{Category: tcLiteral, Operand: Operand{Type: otNull}}, nil
 	}
 	return i, nil, errUnknownToken
 }
@@ -85,7 +85,7 @@ func readRegexp(path []byte, i int) (int, *Token, error) {
 	if err != nil {
 		return i, nil, err
 	}
-	return i, &Token{Category: tcLiteral, Type: ltRegexp, Regexp: reg}, nil
+	return i, &Token{Category: tcLiteral, Operand: Operand{Type: otRegexp, Regexp: reg}}, nil
 }
 
 func skipNumber(input []byte, i int) int {

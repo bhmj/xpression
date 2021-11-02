@@ -36,6 +36,7 @@ Not yet.
 - [x] full support of parentheses
 - [x] regular expressions for strings
 - [x] unary minus supported
+- [x] expression evaluation
 - [ ] parser test coverage
 - [ ] expression evaluation
 - [ ] evaluator test coverage
