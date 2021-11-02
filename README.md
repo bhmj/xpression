@@ -33,7 +33,7 @@ Not yet.
 - [x] bitwise operators: `| & ^ ~`
 - [x] logical operators: `|| && !`
 - [x] comparison operators: `> < >= <= == === != !==`
-- [x] full support of parenthesis
+- [x] full support of parentheses
 - [x] regular expressions for strings
 - [x] unary minus supported
 - [ ] parser test coverage

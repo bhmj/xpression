@@ -8,7 +8,7 @@ var (
 	errUnknownToken,
 	errInvalidCharacter,
 	errUnexpectedStringEnd,
-	errMismatchedParenthesis error
+	errMismatchedParentheses error
 )
 
 func init() {
@@ -17,5 +17,5 @@ func init() {
 	errUnknownToken = errors.New("unknown token")
 	errInvalidCharacter = errors.New("invalid character")
 	errUnexpectedStringEnd = errors.New("unexpected end of string")
-	errMismatchedParenthesis = errors.New("mismatched parenthesis")
+	errMismatchedParentheses = errors.New("mismatched parentheses")
 }

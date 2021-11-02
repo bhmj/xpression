@@ -209,7 +209,7 @@ func parseExpression(path []byte, i int) ([]*Token, error) {
 			for {
 				top := opStack.peek()
 				if top == nil {
-					return nil, errMismatchedParenthesis
+					return nil, errMismatchedParentheses
 				}
 				if top.Category == tcRightParenthesis {
 					opStack.pop()
@@ -234,7 +234,7 @@ func readNextToken(path []byte, i int, prevOperator Operator) (int, *Token, erro
 	if err != nil {
 		return i, nil, err
 	}
-	// parenthesis
+	// parentheses
 	if path[i] == '(' {
 		return i + 1, &Token{Category: tcLeftParenthesis, Operator: opLeftParenthesis}, nil
 	}
