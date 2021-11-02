@@ -255,7 +255,7 @@ func readNextToken(path []byte, i int, prevOperator Operator) (int, *Token, erro
 	}
 	// literal:
 	// number
-	if (path[i] >= '0' && path[i] <= '9') || (path[i] == '-' && prevOperator != 0) {
+	if path[i] >= '0' && path[i] <= '9' {
 		return readNumber(path, i)
 	}
 	// string
