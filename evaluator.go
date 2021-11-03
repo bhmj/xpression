@@ -142,32 +142,29 @@ func doArithmetic(op Operator, left *Operand, right *Operand) (*Operand, error) 
 func doComparison(op Operator, left *Operand, right *Operand) (*Operand, error) {
 	result := Operand{Type: otBoolean, Bool: false}
 
-	if left.Type == otNull || right.Type == otNull {
-		result.Bool = (left.Type|right.Type == otNull)
+	comparedTypes := left.Type | right.Type
+
+	if comparedTypes&(otNull|otUndefined) > 0 {
+		// at least one side is null or undefined:
+		result.Bool = (comparedTypes | otNull | otUndefined) == (otNull | otUndefined) // both are null or undefined
 		return &result, nil
 	}
 	if op == opRegexMatch || op == opNotRegexMatch {
 		// regexp match only works on string + regexp
-		if !(left.Type|right.Type == otString|otRegexp) {
+		if !(comparedTypes == otString|otRegexp) {
 			return &result, nil
 		}
 	}
-	if op == opStrictEqual && left.Type != right.Type {
+	if op&(opStrictEqual|opStrictNotEqual) > 0 && left.Type != right.Type {
 		// strict comparison: types must match
 		return &result, nil
 	}
-	comparedTypes := left.Type | right.Type
 
-	if comparedTypes&otNumber > 0 {
-		return doCompareNumber(op, toNumber(left), toNumber(right))
-	}
-	if comparedTypes&otBoolean > 0 {
-		return doCompareBool(op, toBoolean(left), toBoolean(right))
-	}
-	if comparedTypes&otString > 0 {
+	if comparedTypes == otString || comparedTypes == otString|otRegexp {
 		return doCompareString(op, left, right)
 	}
-	return &result, nil
+
+	return doCompareNumber(op, toNumber(left), toNumber(right))
 }
 
 // doLogic executes binary logical operators following JavaScript conversion rules.
@@ -178,38 +175,14 @@ func doLogic(op Operator, left *Operand, right *Operand) (*Operand, error) {
 	lval := toBoolean(left)
 	if op == opLogicalAND || op == opLogicalOR {
 		if (op == opLogicalAND && !lval.Bool) || (op == opLogicalOR && lval.Bool) { // false AND ..., true OR ... -> result!
-			return lval, nil
+			return left, nil
 		}
-		return toBoolean(right), nil
+		return right, nil
 	}
 
 	// logical NOT
 	lval.Bool = !lval.Bool
 	return lval, nil
-}
-
-// doCompareBool compares two boolean values.
-func doCompareBool(op Operator, left *Operand, right *Operand) (*Operand, error) {
-	res := Operand{Type: otBoolean}
-
-	if left.Type|right.Type != otBoolean {
-		return &res, nil
-	}
-	switch op {
-	case opG:
-		res.Bool = (left.Bool && !right.Bool)
-	case opL:
-		res.Bool = (!left.Bool && right.Bool)
-	case opEqual, opStrictEqual:
-		res.Bool = (left.Bool == right.Bool)
-	case opNotEqual, opStrictNotEqual:
-		res.Bool = (left.Bool != right.Bool)
-	case opGE:
-		res.Bool = (left.Bool || !right.Bool)
-	case opLE:
-		res.Bool = (!left.Bool || right.Bool)
-	}
-	return &res, nil
 }
 
 // doCompareNumber compares two numbers.
