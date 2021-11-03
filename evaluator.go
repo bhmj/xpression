@@ -1,19 +1,20 @@
 //
-// This package uses https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html for reference of expression evaluation logic.
+// [1] https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html used for reference of expression evaluation logic.
 //
 package main
 
 import (
 	"bytes"
-	"fmt"
 	"math"
 	"strconv"
 )
 
 var (
 	opsArithmetic = []byte{
+		byte(opUnaryMinus),
 		byte(opPlus),
 		byte(opMinus),
+		byte(opMultiply),
 		byte(opMultiply),
 		byte(opDivide),
 		byte(opExponentiation),
@@ -113,6 +114,8 @@ func doArithmetic(op Operator, left *Operand, right *Operand) (*Operand, error) 
 
 	res.Type = otNumber
 	switch op {
+	case opUnaryMinus:
+		res.Number = -toNumber(left).Number
 	case opPlus:
 		res.Number = toNumber(left).Number + toNumber(right).Number
 	case opMinus:
@@ -123,6 +126,8 @@ func doArithmetic(op Operator, left *Operand, right *Operand) (*Operand, error) 
 		res.Number = toNumber(left).Number / toNumber(right).Number
 	case opExponentiation:
 		res.Number = math.Pow(toNumber(left).Number, toNumber(right).Number)
+	case opBitwiseAND:
+		res.Number = float64(int64(toNumber(left).Number) & int64(toNumber(right).Number))
 	case opBitwiseOR:
 		res.Number = float64(int64(toNumber(left).Number) | int64(toNumber(right).Number))
 	case opBitwiseXOR:
@@ -144,26 +149,40 @@ func doComparison(op Operator, left *Operand, right *Operand) (*Operand, error) 
 
 	comparedTypes := left.Type | right.Type
 
-	if comparedTypes&(otNull|otUndefined) > 0 {
+	// [1] 7.2.14 (2,3)
+	if op == opEqual && comparedTypes&(otNull|otUndefined) > 0 {
 		// at least one side is null or undefined:
 		result.Bool = (comparedTypes | otNull | otUndefined) == (otNull | otUndefined) // both are null or undefined
 		return &result, nil
 	}
 	if op == opRegexMatch || op == opNotRegexMatch {
-		// regexp match only works on string + regexp
-		if !(comparedTypes == otString|otRegexp) {
+		// one of them must be regexp
+		if comparedTypes&otRegexp != otRegexp {
 			return &result, nil
 		}
+		// other must be non-regexp
+		if comparedTypes-otRegexp == 0 {
+			return &result, nil
+		}
+		// convert non-regexp part to string and compare
+		if right.Type == otRegexp {
+			return doCompareString(op, toString(left), right) // regexp should be second argument
+		}
+		return doCompareString(op, toString(right), left) // regexp should be second argument
 	}
-	if op&(opStrictEqual|opStrictNotEqual) > 0 && left.Type != right.Type {
+
+	// [1] 7.2.15 (1)
+	if (op == opStrictEqual || op == opStrictNotEqual) && left.Type != right.Type {
 		// strict comparison: types must match
 		return &result, nil
 	}
 
-	if comparedTypes == otString || comparedTypes == otString|otRegexp {
+	// [1] 7.2.15 (4)
+	if comparedTypes == otString {
 		return doCompareString(op, left, right)
 	}
 
+	// [1] 7.2.14 (5,6,7?,8?)
 	return doCompareNumber(op, toNumber(left), toNumber(right))
 }
 
@@ -254,12 +273,12 @@ func toString(op *Operand) *Operand {
 			result.Str = []byte("false")
 		}
 	case otNumber:
-		result.Str = []byte(fmt.Sprintf("%g", result.Number))
+		result.Str = []byte(strconv.FormatFloat(result.Number, 'f', -1, 64))
 	}
 	return &result
 }
 
-// toNumber converts operand to number following JavaScript conversion rules.
+// toNumber converts operand to number following JavaScript conversion rules. See [1] 7.1.4
 func toNumber(op *Operand) *Operand {
 	if op.Type == otNumber {
 		return op
@@ -280,10 +299,14 @@ func toNumber(op *Operand) *Operand {
 			result.Number = 0
 		}
 	case otString:
-		var err error
-		result.Number, err = strconv.ParseFloat(string(op.Str), 64)
-		if err != nil {
-			result.Number = math.NaN()
+		if len(op.Str) == 0 { // [1] 7.1.4.1.2 (1)
+			result.Number = 0
+		} else {
+			var err error
+			result.Number, err = strconv.ParseFloat(string(op.Str), 64)
+			if err != nil { // [1] 7.1.4.1.1 (3)
+				result.Number = math.NaN()
+			}
 		}
 	case otRegexp:
 		result.Number = math.NaN()
@@ -306,10 +329,13 @@ func toBoolean(op *Operand) *Operand {
 		result.Bool = len(op.Str) > 0
 	case otNumber:
 		result.Bool = op.Number != 0 && !math.IsNaN(op.Number)
+	case otRegexp:
+		result.Bool = false
 	}
 	return &result
 }
 
+// logic complies to [1] 7.2.13 (3) only for BYTES not codepoints!
 func compareSlices(s1 []byte, s2 []byte) int {
 	if len(s1)+len(s2) == 0 {
 		return 0

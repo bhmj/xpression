@@ -21,10 +21,11 @@ Expression examples:
 
 ## Test coverage
 
-Not yet.
+Tests cover the majority of cases described in ECMAScript Language definition (specifically [ECMAScript Language: Expressions reference](https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html) and [Testing and Comparison Operations](https://tc39.es/ecma262/multipage/abstract-operations.html#sec-testing-and-comparison-operations)). 
 
 ## Changelog
 
+**0.5.0** (2021-11-04) -- Tests added. Multiple bugs fixed.  
 **0.4.0** (2021-11-02) -- Expression evaluation.  
 **0.3.0** (2021-11-01) -- MVP.
 
@@ -38,9 +39,10 @@ Not yet.
 - [x] regular expressions for strings
 - [x] unary minus supported
 - [x] expression evaluation
-- [ ] parser test coverage
-- [ ] expression evaluation
-- [ ] evaluator test coverage
+- [+] parser test coverage
+- [+] expression evaluation
+- [+] evaluator test coverage
+- [ ] add external reference type (node reference in jsonslice)
 
 ## Contributing
 

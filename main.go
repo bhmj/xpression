@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 )
 
 type Operator byte      // list of operators: + - * / < > == !=
@@ -150,6 +151,39 @@ type Token struct {
 	Operand
 }
 
+func (tok *Token) String() string {
+	opCode := func(op Operator) string {
+		for _, rec := range operatorSpelling {
+			if rec.Code == op {
+				return string(rec.Spelling)
+			}
+		}
+		return "???"
+	}
+
+	switch tok.Category {
+	case tcLiteral:
+		switch tok.Type {
+		case otNull:
+			return "null"
+		case otUndefined:
+			return "undefined"
+		case otString:
+			return fmt.Sprintf("\"%s\"", string(tok.Str))
+		case otNumber:
+			return strconv.FormatFloat(tok.Number, 'f', -1, 64)
+		case otBoolean:
+			return fmt.Sprintf("%v", tok.Bool)
+		case otRegexp:
+			return fmt.Sprintf("/%s/", tok.Regexp.String())
+		}
+	case tcOperator:
+		return opCode(tok.Operator)
+	}
+
+	return "unknown"
+}
+
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Printf("Expression parser.\nUsage: %[1]s <expression>", filepath.Base(os.Args[0]))
@@ -173,6 +207,7 @@ func main() {
 }
 
 func parseExpression(path []byte, i int) ([]*Token, error) {
+	path = path[:trimSpaces(path)]
 	l := len(path)
 
 	// lexer
@@ -258,7 +293,7 @@ func readNextToken(path []byte, i int, prevOperator Operator) (int, *Token, erro
 	// operator
 	for _, op := range operatorSpelling {
 		if matchSubslice(path[i:], op.Spelling) {
-			if op.Code == opDivide && (prevOperator == opRegexMatch || prevOperator == opNotRegexMatch) {
+			if op.Code == opDivide && prevOperator != opNone {
 				return readRegexp(path, i)
 			}
 			if op.Code == opMinus && prevOperator != opNone {
@@ -295,10 +330,18 @@ func skipSpaces(input []byte, i int) (int, error) {
 			break
 		}
 	}
-	if i == l {
-		return i, errUnexpectedEnd
-	}
 	return i, nil
+}
+
+func trimSpaces(input []byte) int {
+	l := len(input)
+	i := l - 1
+	for ; i >= 0; i-- {
+		if !bytein(input[i], []byte{' ', ',', '\t', '\r', '\n'}) {
+			break
+		}
+	}
+	return i + 1
 }
 
 // returns true if b matches one of the elements of seq
@@ -312,32 +355,8 @@ func bytein(b byte, seq []byte) bool {
 }
 
 func printParsedExpression(tokens []*Token) {
-	opCode := func(op Operator) string {
-		for _, rec := range operatorSpelling {
-			if rec.Code == op {
-				return string(rec.Spelling)
-			}
-		}
-		return "???"
-	}
-
 	for _, tok := range tokens {
-		switch tok.Category {
-		case tcLiteral:
-			switch tok.Type {
-			case otString:
-				fmt.Printf("\"%s\"", string(tok.Str))
-			case otNumber:
-				fmt.Printf("%v", tok.Number)
-			case otBoolean:
-				fmt.Printf("%v", tok.Bool)
-			case otRegexp:
-				fmt.Printf("/%s/", tok.Regexp.String())
-			}
-		case tcOperator:
-			fmt.Printf("%s", opCode(tok.Operator))
-		}
-		fmt.Printf(" ")
+		fmt.Printf("%s ", tok.String())
 	}
 	fmt.Println()
 }

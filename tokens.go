@@ -30,7 +30,7 @@ func readString(path []byte, i int) (int, *Token, error) {
 		i++
 	}
 	if i == l && !done {
-		return s, nil, errUnexpectedStringEnd
+		return s, nil, errUnexpectedEndOfString
 	}
 	e := i
 	i++ // unquote
