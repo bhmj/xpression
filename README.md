@@ -39,9 +39,9 @@ Tests cover the majority of cases described in ECMAScript Language definition (s
 - [x] regular expressions for strings
 - [x] unary minus supported
 - [x] expression evaluation
-- [+] parser test coverage
-- [+] expression evaluation
-- [+] evaluator test coverage
+- [x] parser test coverage
+- [x] expression evaluation
+- [x] evaluator test coverage
 - [ ] add external reference type (node reference in jsonslice)
 
 ## Contributing
