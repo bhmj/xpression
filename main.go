@@ -312,6 +312,15 @@ func bytein(b byte, seq []byte) bool {
 }
 
 func printParsedExpression(tokens []*Token) {
+	opCode := func(op Operator) string {
+		for _, rec := range operatorSpelling {
+			if rec.Code == op {
+				return string(rec.Spelling)
+			}
+		}
+		return "???"
+	}
+
 	for _, tok := range tokens {
 		switch tok.Category {
 		case tcLiteral:
@@ -326,7 +335,7 @@ func printParsedExpression(tokens []*Token) {
 				fmt.Printf("/%s/", tok.Regexp.String())
 			}
 		case tcOperator:
-			fmt.Printf("%s", string([]byte{byte(tok.Operator)}))
+			fmt.Printf("%s", opCode(tok.Operator))
 		}
 		fmt.Printf(" ")
 	}
