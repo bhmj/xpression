@@ -91,6 +91,7 @@ ok      github.com/Knetic/govaluate     12.603s
 - [x] parser test coverage
 - [x] expression evaluation
 - [x] evaluator test coverage
+- [ ] refactor: operatorSpelling + operatorDetails -> map[spelling]{code, assoc, prec, args}. Store pointer to struct in Operand.
 - [ ] add external reference type (node reference in jsonslice)
 - [ ] Unicode support!
 
