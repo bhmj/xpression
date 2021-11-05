@@ -35,7 +35,7 @@ Parentheses | `(` `)`
 String constants | `'string'` or `"string"`
 Numeric | 64-bit integers or floats
 Boolean | `true` or `false`. Comparison results in boolean value.
-Regexp | `/expression/` with modifiers: `i` (case-insensitive), `m` (multiline), `s` (single-line), `U` (ungreedy).<br/>Example: `/ab.*d/iU`
+Regexp | `/expression/` with modifiers:<br>`i` (case-insensitive), `m` (multiline), `s` (single-line), `U` (ungreedy)
 Other | `null`
 
 ## Test coverage
@@ -51,8 +51,8 @@ $ go test -bench=. -benchmem -benchtime=4s
 goos: windows
 goarch: amd64
 pkg: github.com/bhmj/expression_parser
-Benchmark_ModifiedNumericLiteral_WithParsing-4            1252026     3753 ns/op     1144 B/op   24 allocs/op
-Benchmark_ModifiedNumericLiteral_WithoutParsing-4        32295195      158 ns/op        0 B/op    0 allocs/op
+Benchmark_ModifiedNumericLiteral_WithParsing-4         1252026    3753 ns/op    1144 B/op   24 allocs/op
+Benchmark_ModifiedNumericLiteral_WithoutParsing-4     32295195     158 ns/op       0 B/op    0 allocs/op
 PASS
 ok      github.com/bhmj/expression_parser       16.605
 ```
@@ -64,8 +64,8 @@ $ go test -bench='LiteralModifiers' -benchmem -benchtime=4s
 goos: windows
 goarch: amd64
 pkg: github.com/Knetic/govaluate
-BenchmarkEvaluationLiteralModifiers_WithParsing-4          559497     8499 ns/op     2272 B/op   49 allocs/op
-BenchmarkEvaluationLiteralModifiers-4                    10908465      403 ns/op        8 B/op    1 allocs/op
+BenchmarkEvaluationLiteralModifiers_WithParsing-4       559497    8499 ns/op    2272 B/op   49 allocs/op
+BenchmarkEvaluationLiteralModifiers-4                 10908465     403 ns/op       8 B/op    1 allocs/op
 PASS
 ok      github.com/Knetic/govaluate     12.603s
 ```
