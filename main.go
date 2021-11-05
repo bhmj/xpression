@@ -36,6 +36,7 @@ const (
 	opMinus            Operator = '-'
 	opMultiply         Operator = '*'
 	opDivide           Operator = '/'
+	opRemainder        Operator = '%'
 	opExponentiation   Operator = 'P'
 	opLogicalNOT       Operator = '!'
 	opBitwiseNOT       Operator = '~'
@@ -75,12 +76,14 @@ type OperatorDetail struct {
 var operatorSpelling = []struct {
 	Spelling []byte
 	Code     Operator
-}{ // IMPORTANT: first longest string, then substring(s)! Ex: "!~=", "!~", "!"
+}{ // IMPORTANT: first longest string, then substring(s)! Ex: "!=~", "!=", "!"
 	{[]byte("||"), opLogicalOR},
 	{[]byte("&&"), opLogicalAND},
 	{[]byte("|"), opBitwiseOR},
 	{[]byte("&"), opBitwiseAND},
 	{[]byte("^"), opBitwiseXOR},
+	{[]byte("!=~"), opNotRegexMatch},
+	{[]byte("!~"), opNotRegexMatch},
 	{[]byte("==="), opStrictEqual},
 	{[]byte("=="), opEqual},
 	{[]byte("!=="), opStrictNotEqual},
@@ -91,14 +94,13 @@ var operatorSpelling = []struct {
 	{[]byte(">"), opG},
 	{[]byte("<="), opLE},
 	{[]byte("<"), opL},
-	{[]byte("~="), opRegexMatch},
-	{[]byte("!~="), opNotRegexMatch},
-	{[]byte("!~"), opNotRegexMatch},
+	{[]byte("=~"), opRegexMatch},
 	{[]byte("**"), opExponentiation},
 	{[]byte("+"), opPlus},
 	{[]byte("-"), opMinus},
 	{[]byte("*"), opMultiply},
 	{[]byte("/"), opDivide},
+	{[]byte("%"), opRemainder},
 	{[]byte("!"), opLogicalNOT},
 	{[]byte("~"), opBitwiseNOT},
 	{[]byte("-"), opUnaryMinus},
@@ -120,14 +122,15 @@ var operatorDetails = map[Operator]OperatorDetail{
 	opG:                {aLeft, 7, 2},   // >
 	opLE:               {aLeft, 7, 2},   // <=
 	opL:                {aLeft, 7, 2},   // <
-	opRegexMatch:       {aLeft, 7, 2},   // ~=
-	opNotRegexMatch:    {aLeft, 7, 2},   // !~=
+	opRegexMatch:       {aLeft, 7, 2},   // =~
+	opNotRegexMatch:    {aLeft, 7, 2},   // !=~
 	opShiftRight:       {aLeft, 8, 2},   // >>
 	opShiftLeft:        {aLeft, 8, 2},   // <<
 	opPlus:             {aLeft, 9, 2},   // +
 	opMinus:            {aLeft, 9, 2},   // -
 	opMultiply:         {aLeft, 10, 2},  // *
 	opDivide:           {aLeft, 10, 2},  // /
+	opRemainder:        {aLeft, 10, 2},  // %
 	opExponentiation:   {aRight, 11, 2}, // **
 	opLogicalNOT:       {aLeft, 12, 1},  // logical NOT (!)
 	opBitwiseNOT:       {aLeft, 12, 1},  // bitwise NOT (~)

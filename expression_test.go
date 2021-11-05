@@ -32,6 +32,8 @@ func Test_Expressions(t *testing.T) {
 		{`3 / 2`, `1.5`},
 		{`1 / 0`, `+Inf`},
 		{`-1 / 0`, `-Inf`},
+		{`4 % 2`, `0`},
+		{`5 % 2`, `1`},
 		// bitwise operations
 		{`6 | 3`, `7`},
 		{`6 & 3`, `2`},
@@ -69,9 +71,9 @@ func Test_Expressions(t *testing.T) {
 		{`"AAA" < "BB"`, `true`},
 		{`"AA" < "BB"`, `true`},
 		{`"A" < "BB"`, `true`},
-		{`"foobar" ~= /foo.*/`, `true`},
-		{`"foobar" ~= /FOO.*/i`, `true`},
-		{`"foobar" !~= /FOO.*/`, `true`},
+		{`"foobar" =~ /foo.*/`, `true`},
+		{`"foobar" =~ /FOO.*/i`, `true`},
+		{`"foobar" !=~ /FOO.*/`, `true`},
 		// comparison: nulls
 		{`null == 1`, `false`},
 		{`null == "AA"`, `false`},
@@ -84,8 +86,8 @@ func Test_Expressions(t *testing.T) {
 		{`"" == false`, `true`},
 		{`"0" == false`, `true`},
 		{`"false" == false`, `false`},
-		{`1234 ~= /1.*4/`, `true`},
-		{`true ~= /TRU?E/i`, `true`},
+		{`1234 =~ /1.*4/`, `true`},
+		{`true =~ /TRU?E/i`, `true`},
 		{`true > 0`, `true`},
 		{`"xxx" > 4`, `false`},
 		{`"xxx" > 4`, `false`},
@@ -112,9 +114,9 @@ func Test_Expressions(t *testing.T) {
 		{`null + "able"`, `"nullable"`},
 		{`false + " confessions"`, `"false confessions"`},
 		// regexps
-		{`"a" ~= "b"`, `false`},     // maybe undefined ?
-		{`/foo/ ~= /bar/`, `false`}, // maybe undefined ?
-		{`/123/ ~= 123`, `true`},
+		{`"a" =~ "b"`, `false`},     // maybe undefined ?
+		{`/foo/ =~ /bar/`, `false`}, // maybe undefined ?
+		{`/123/ =~ 123`, `true`},
 		// logical operations
 		{`true && true`, `true`},
 		{`true && false`, `false`},
@@ -173,7 +175,7 @@ func Test_Errors(t *testing.T) {
 		{`"a" ( "b"`, errMismatchedParentheses.Error()},
 		{`troo`, errUnknownToken.Error() + ` at 0: troo`},
 		{`nool`, errUnknownToken.Error() + ` at 0: nool`},
-		{`"a" ~= /a(b/`, "error parsing regexp: missing closing ): `a(b` at 12: "},
+		{`"a" =~ /a(b/`, "error parsing regexp: missing closing ): `a(b` at 12: "},
 	}
 
 	for _, tst := range tests {
@@ -198,5 +200,22 @@ func Test_Errors(t *testing.T) {
 		if !gotError {
 			t.Errorf(tst.Expression + "\n\texpected error `" + string(tst.Expected) + "`\n\tbut got nothing")
 		}
+	}
+}
+
+func Benchmark_ModifiedNumericLiteral_WithParsing(b *testing.B) {
+	expression := `(2) + (2) == (4)`
+	for i := 0; i < b.N; i++ {
+		tokens, _ := parseExpression([]byte(expression), 0)
+		_, _, _ = evaluateExpression(tokens)
+	}
+}
+
+func Benchmark_ModifiedNumericLiteral_WithoutParsing(b *testing.B) {
+	expression := `(2) + (2) == (4)`
+	tokens, _ := parseExpression([]byte(expression), 0)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _, _ = evaluateExpression(tokens)
 	}
 }
