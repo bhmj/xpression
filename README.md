@@ -6,7 +6,15 @@ This project is a renewed version of expression parser used in [jsonslice](https
 
 ## Check it out
 
-`go run ./... "expression"`
+```
+git clone https://github.com/bhmj/expression_parser.git
+
+cd expression_parser
+
+go build .
+
+./expression_parser "1+2"
+````
 
 Expression examples:
 
