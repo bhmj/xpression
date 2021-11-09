@@ -1,4 +1,4 @@
-package main
+package expression_parser
 
 import "errors"
 

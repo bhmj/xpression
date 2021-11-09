@@ -1,7 +1,7 @@
 //
 // [1] https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html used for reference of expression evaluation logic.
 //
-package main
+package expression_parser
 
 import (
 	"bytes"
@@ -46,18 +46,23 @@ var (
 	}
 )
 
+type VariableFunc func([]byte) (*Operand, error)
+
 // EvaluateExpression evaluates the expression starting from the head of the token list.
 // Usually it takes an operator from the head of the list and then takes 1 or 2 operands from the list,
 // depending of the operator type (unary or binary).
 // The extreme case is when there is only one operand exist in the list.
 // This function calls itself recursively to evalute operands if needed.
-func evaluateExpression(tokens []*Token) (*Operand, []*Token, error) {
+func evaluateExpression(tokens []*Token, varFunc VariableFunc) (*Operand, []*Token, error) {
 	if len(tokens) == 0 {
 		return nil, nil, errNotEnoughArguments
 	}
 	tok := tokens[0]
 	if tok.Category == tcLiteral {
 		return &tok.Operand, tokens[1:], nil
+	} else if tok.Category == tcVariable {
+		op, err := varFunc(tok.Str)
+		return op, tokens[1:], err
 	}
 
 	var (
@@ -65,12 +70,12 @@ func evaluateExpression(tokens []*Token) (*Operand, []*Token, error) {
 		left  *Operand
 		right *Operand
 	)
-	left, tokens, err = evaluateExpression(tokens[1:])
+	left, tokens, err = evaluateExpression(tokens[1:], varFunc)
 	if err != nil {
 		return nil, tokens, err
 	}
 	if operatorDetails[tok.Operator].Arguments > 1 {
-		right, tokens, err = evaluateExpression(tokens)
+		right, tokens, err = evaluateExpression(tokens, varFunc)
 		if err != nil {
 			return nil, tokens, err
 		}

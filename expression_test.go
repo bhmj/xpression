@@ -1,4 +1,4 @@
-package main
+package expression_parser
 
 import (
 	"testing"
@@ -146,7 +146,7 @@ func Test_Expressions(t *testing.T) {
 		if err != nil {
 			t.Errorf(tst.Expression + " : " + err.Error())
 		} else {
-			operand, _, err := evaluateExpression(tokens)
+			operand, _, err := evaluateExpression(tokens, nil)
 			if err != nil {
 				t.Errorf(tst.Expression + " : " + err.Error())
 			}
@@ -188,7 +188,7 @@ func Test_Errors(t *testing.T) {
 				t.Errorf(tst.Expression + "\n\texpected error `" + string(tst.Expected) + "`\n\tbut got `" + errMessage + "`")
 			}
 		} else {
-			_, _, err := evaluateExpression(tokens)
+			_, _, err := evaluateExpression(tokens, nil)
 			if err != nil {
 				gotError = true
 				errMessage := err.Error()
@@ -207,7 +207,7 @@ func Benchmark_ModifiedNumericLiteral_WithParsing(b *testing.B) {
 	expression := `(2) + (2) == (4)`
 	for i := 0; i < b.N; i++ {
 		tokens, _ := parseExpression([]byte(expression), 0)
-		_, _, _ = evaluateExpression(tokens)
+		_, _, _ = evaluateExpression(tokens, nil)
 	}
 }
 
@@ -216,6 +216,6 @@ func Benchmark_ModifiedNumericLiteral_WithoutParsing(b *testing.B) {
 	tokens, _ := parseExpression([]byte(expression), 0)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, _, _ = evaluateExpression(tokens)
+		_, _, _ = evaluateExpression(tokens, nil)
 	}
 }

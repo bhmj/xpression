@@ -1,4 +1,4 @@
-package main
+package expression_parser
 
 import (
 	"regexp"
@@ -88,6 +88,23 @@ func readRegexp(path []byte, i int) (int, *Token, error) {
 	return i, &Token{Category: tcLiteral, Operand: Operand{Type: otRegexp, Regexp: reg}}, nil
 }
 
+func readJsonpath(path []byte, i int) (int, *Token, error) {
+	var err error
+	l := len(path)
+	s := i
+	for i < l && path[i] != ' ' {
+		if path[i] == '\'' || path[i] == '"' {
+			i, err = skipString(path, i)
+			if err != nil {
+				return i, nil, err // unexpected EOL
+			}
+		} else {
+			i++
+		}
+	}
+	return i, &Token{Category: tcVariable, Operand: Operand{Type: otVariable, Str: path[s:i]}}, nil
+}
+
 func skipNumber(input []byte, i int) int {
 	l := len(input)
 	if i < l && input[i] == '-' {
@@ -110,6 +127,27 @@ func skipNumber(input []byte, i int) int {
 	for ; i < l && (input[i] >= '0' && input[i] <= '9'); i++ {
 	}
 	return i
+}
+
+func skipString(input []byte, i int) (int, error) {
+	bound := input[i]
+	done := false
+	escaped := false
+	s := i
+	i++ // bound
+	l := len(input)
+	for i < l && !done {
+		ch := input[i]
+		if ch == bound && !escaped {
+			done = true
+		}
+		escaped = ch == '\\' && !escaped
+		i++
+	}
+	if i == l && !done {
+		return s, errUnexpectedEndOfString
+	}
+	return i, nil
 }
 
 func matchSubslice(str, needle []byte) bool {

@@ -1,9 +1,7 @@
-package main
+package expression_parser
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 	"regexp"
 	"strconv"
 )
@@ -50,7 +48,7 @@ const (
 	tcOperator                                   // +-*/^!<=>
 	tcLeftParenthesis                            //
 	tcRightParenthesis                           //
-	tcNodeRef                                    // @.key
+	tcVariable                                   // @.key etc
 )
 
 const (
@@ -60,6 +58,7 @@ const (
 	otNull
 	otUndefined
 	otRegexp
+	otVariable
 )
 
 const (
@@ -182,31 +181,22 @@ func (tok *Token) String() string {
 		}
 	case tcOperator:
 		return opCode(tok.Operator)
+	case tcVariable:
+		return string(tok.Str)
 	}
 
 	return "unknown"
 }
 
-func main() {
-	if len(os.Args) < 2 {
-		fmt.Printf("Expression parser.\nUsage: %[1]s <expression>", filepath.Base(os.Args[0]))
-		return
-	}
-
-	tokens, err := parseExpression([]byte(os.Args[1]), 0)
-
-	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+func variableGetter(variable []byte) (*Operand, error) {
+	var res Operand
+	if compareSlices(variable, []byte("@.foobar")) == 0 {
+		res.Type = otNumber
+		res.Number = 123
 	} else {
-		printParsedExpression(tokens)
-
-		result, _, err := evaluateExpression(tokens)
-		if err != nil {
-			fmt.Printf("Error: %v\n", err)
-		} else {
-			printParsedExpression([]*Token{{Category: tcLiteral, Operand: *result}})
-		}
+		res.Type = otBoolean
 	}
+	return &res, nil
 }
 
 func parseExpression(path []byte, i int) ([]*Token, error) {
@@ -234,7 +224,7 @@ func parseExpression(path []byte, i int) ([]*Token, error) {
 	result := new(tokenStack)
 	for _, token := range reverse(tokens) {
 		switch token.Category {
-		case tcLiteral:
+		case tcLiteral, tcVariable:
 			result.push(token)
 		case tcOperator:
 			for {
@@ -269,7 +259,6 @@ func parseExpression(path []byte, i int) ([]*Token, error) {
 				}
 				result.push(opStack.pop())
 			}
-		case tcNodeRef:
 		}
 	}
 
@@ -322,6 +311,9 @@ func readNextToken(path []byte, i int, prevOperator Operator) (int, *Token, erro
 	if path[i] == 'n' {
 		return readNull(path, i)
 	}
+	if path[i] == '$' || path[i] == '@' {
+		return readJsonpath(path, i)
+	}
 
 	return i, nil, errUnknownToken
 }
@@ -355,11 +347,4 @@ func bytein(b byte, seq []byte) bool {
 		}
 	}
 	return false
-}
-
-func printParsedExpression(tokens []*Token) {
-	for _, tok := range tokens {
-		fmt.Printf("%s ", tok.String())
-	}
-	fmt.Println()
 }
