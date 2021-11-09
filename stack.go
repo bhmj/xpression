@@ -1,4 +1,4 @@
-package expression_parser
+package xpression
 
 type tokenStack struct {
 	data []*Token

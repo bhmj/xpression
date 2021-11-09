@@ -1,3 +1,3 @@
-module github.com/bhmj/expression_parser
+module github.com/bhmj/xpression
 
 go 1.17

@@ -7,13 +7,13 @@ This project is a renewed version of expression parser used in [jsonslice](https
 ## Check it out
 
 ```
-git clone https://github.com/bhmj/expression_parser.git
+git clone https://github.com/bhmj/xpression.git
 
-cd expression_parser
+cd xpression
 
 go build .
 
-./expression_parser "1+2"
+./xpression "1+2"
 ````
 
 Expression examples:
@@ -58,11 +58,11 @@ Evaluate `(2) + (2) == (4)`
 $ go test -bench=. -benchmem -benchtime=4s
 goos: windows
 goarch: amd64
-pkg: github.com/bhmj/expression_parser
+pkg: github.com/bhmj/xpression
 Benchmark_ModifiedNumericLiteral_WithParsing-4         1252026    3753 ns/op    1144 B/op   24 allocs/op
 Benchmark_ModifiedNumericLiteral_WithoutParsing-4     32295195     158 ns/op       0 B/op    0 allocs/op
 PASS
-ok      github.com/bhmj/expression_parser       16.605
+ok      github.com/bhmj/xpression       16.605
 ```
 
 The same expression evaluated with [github.com/Knetic/govaluate](https://github.com/Knetic/govaluate) :

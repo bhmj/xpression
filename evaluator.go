@@ -1,7 +1,7 @@
 //
 // [1] https://tc39.es/ecma262/multipage/ecmascript-language-expressions.html used for reference of expression evaluation logic.
 //
-package expression_parser
+package xpression
 
 import (
 	"bytes"
