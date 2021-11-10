@@ -1,5 +1,4 @@
 /build/*
 /dist
-.vscode/
 .idea/
 __debug_*

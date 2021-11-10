@@ -73,7 +73,7 @@ func readVar(path []byte, i int) (int, *Token, error) {
 	var err error
 	l := len(path)
 	s := i
-	for i < l && path[i] != ' ' {
+	for i < l && !bytein(path[i], operatorBound) {
 		if path[i] == '\'' || path[i] == '"' {
 			i, err = skipString(path, i)
 			if err != nil {

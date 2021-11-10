@@ -158,6 +158,17 @@ type Operand struct {
 	// + node reference
 }
 
+var operatorBound []byte
+
+func init() {
+	operatorBound = []byte{' '}
+	for _, operator := range operatorSpelling {
+		if !bytein(operator.Spelling[0], operatorBound) {
+			operatorBound = append(operatorBound, operator.Spelling[0])
+		}
+	}
+}
+
 func (op *Operand) String() string {
 	switch op.Type {
 	case otNull:
