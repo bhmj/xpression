@@ -138,6 +138,15 @@ func Test_Expressions(t *testing.T) {
 		{`0 || "a"`, `"a"`},
 		{`0 || "a"`, `"a"`},
 		{`/aa/ || "a"`, `"a"`},
+		// variables
+		{`@.foo`, `123`},
+	}
+
+	varFunc := func(str []byte) (*Operand, error) {
+		if string(str) == "@.foo" {
+			return Number(123), nil
+		}
+		return nil, errUnknownToken
 	}
 
 	for _, tst := range tests {
@@ -146,7 +155,7 @@ func Test_Expressions(t *testing.T) {
 		if err != nil {
 			t.Errorf(tst.Expression + " : " + err.Error())
 		} else {
-			operand, _, err := Evaluate(tokens, nil)
+			operand, _, err := Evaluate(tokens, varFunc)
 			if err != nil {
 				t.Errorf(tst.Expression + " : " + err.Error())
 			}
@@ -173,9 +182,9 @@ func Test_Errors(t *testing.T) {
 		{`"a" + "b`, errUnexpectedEndOfString.Error() + ` at 6: "b`},
 		{`"a" # "b`, errUnknownToken.Error() + ` at 4: #`},
 		{`"a" ( "b"`, errMismatchedParentheses.Error()},
-		{`troo`, errUnknownToken.Error() + ` at 0: troo`},
-		{`nool`, errUnknownToken.Error() + ` at 0: nool`},
 		{`"a" =~ /a(b/`, "error parsing regexp: missing closing ): `a(b` at 12: "},
+		{`?`, errUnknownToken.Error() + ` at 0: ?`},
+		{`ABC`, errUnknownToken.Error()},
 	}
 
 	for _, tst := range tests {

@@ -22,19 +22,16 @@ func readString(path []byte, i int) (int, *Token, error) {
 	return e, &Token{Category: tcLiteral, Operand: Operand{Type: otString, Str: path[i+1 : e-1]}}, nil
 }
 
-func readBool(path []byte, i int) (int, *Token, error) {
-	needles := [...][]byte{[]byte("false"), []byte("true")}
+func readBoolNull(path []byte, i int) (int, *Token, error) {
+	needles := [...][]byte{[]byte("false"), []byte("true"), []byte("null")}
 	for n := 0; n < len(needles); n++ {
 		if matchSubslice(path[i:], needles[n]) {
-			return i + len(needles[n]), &Token{Category: tcLiteral, Operand: Operand{Type: otBoolean, Bool: n > 0}}, nil
+			if n == 2 {
+				return i + len(needles[n]), &Token{Category: tcLiteral, Operand: Operand{Type: otNull}}, nil
+			} else {
+				return i + len(needles[n]), &Token{Category: tcLiteral, Operand: Operand{Type: otBoolean, Bool: n > 0}}, nil
+			}
 		}
-	}
-	return i, nil, errUnknownToken
-}
-
-func readNull(path []byte, i int) (int, *Token, error) {
-	if matchSubslice(path[i:], []byte("null")) {
-		return i + 4, &Token{Category: tcLiteral, Operand: Operand{Type: otNull}}, nil
 	}
 	return i, nil, errUnknownToken
 }
@@ -72,7 +69,7 @@ func readRegexp(path []byte, i int) (int, *Token, error) {
 	return i, &Token{Category: tcLiteral, Operand: Operand{Type: otRegexp, Regexp: reg}}, nil
 }
 
-func readJsonpath(path []byte, i int) (int, *Token, error) {
+func readVar(path []byte, i int) (int, *Token, error) {
 	var err error
 	l := len(path)
 	s := i

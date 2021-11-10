@@ -61,8 +61,11 @@ func Evaluate(tokens []*Token, varFunc VariableFunc) (*Operand, []*Token, error)
 	if tok.Category == tcLiteral {
 		return &tok.Operand, tokens[1:], nil
 	} else if tok.Category == tcVariable {
-		op, err := varFunc(tok.Str)
-		return op, tokens[1:], err
+		if varFunc != nil {
+			op, err := varFunc(tok.Str)
+			return op, tokens[1:], err
+		}
+		return nil, tokens, errUnknownToken
 	}
 
 	var (

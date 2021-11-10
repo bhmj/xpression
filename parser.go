@@ -108,16 +108,14 @@ func readNextToken(path []byte, i int, prevOperator Operator) (int, *Token, erro
 	if path[i] == '"' || path[i] == '\'' {
 		return readString(path, i)
 	}
-	// bool
-	if path[i] == 't' || path[i] == 'f' {
-		return readBool(path, i)
+	// bool or null
+	i, tok, err := readBoolNull(path, i)
+	if err == nil {
+		return i, tok, nil
 	}
-	// null
-	if path[i] == 'n' {
-		return readNull(path, i)
-	}
-	if path[i] == '$' || path[i] == '@' {
-		return readJsonpath(path, i)
+	// variable
+	if (path[i] >= 'a' && path[i] <= 'z') || (path[i] >= 'A' && path[i] <= 'Z') || path[i] == '$' || path[i] == '@' {
+		return readVar(path, i)
 	}
 
 	return i, nil, errUnknownToken

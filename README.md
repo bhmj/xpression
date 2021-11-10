@@ -11,9 +11,9 @@ git clone https://github.com/bhmj/xpression.git
 
 cd xpression
 
-go build .
+make build
 
-./xpression "1+2"
+./build/xpression "1+2"
 ````
 
 Expression examples:
