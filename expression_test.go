@@ -142,11 +142,11 @@ func Test_Expressions(t *testing.T) {
 
 	for _, tst := range tests {
 		// println(tst.Query)
-		tokens, err := parseExpression([]byte(tst.Expression), 0)
+		tokens, err := Parse([]byte(tst.Expression), 0)
 		if err != nil {
 			t.Errorf(tst.Expression + " : " + err.Error())
 		} else {
-			operand, _, err := evaluateExpression(tokens, nil)
+			operand, _, err := Evaluate(tokens, nil)
 			if err != nil {
 				t.Errorf(tst.Expression + " : " + err.Error())
 			}
@@ -170,8 +170,8 @@ func Test_Errors(t *testing.T) {
 		{`1 + 2 +`, errNotEnoughArguments.Error()},
 		{`2 * + 2`, errNotEnoughArguments.Error()},
 		{`1..0 +`, `strconv.ParseFloat: parsing "1..0": invalid syntax at 0: 1..0`},
-		{`"a" + "b`, errUnexpectedEndOfString.Error() + ` at 7: b`},
-		{`"a" @ "b`, errUnknownToken.Error() + ` at 4: @`},
+		{`"a" + "b`, errUnexpectedEndOfString.Error() + ` at 6: "b`},
+		{`"a" # "b`, errUnknownToken.Error() + ` at 4: #`},
 		{`"a" ( "b"`, errMismatchedParentheses.Error()},
 		{`troo`, errUnknownToken.Error() + ` at 0: troo`},
 		{`nool`, errUnknownToken.Error() + ` at 0: nool`},
@@ -180,7 +180,7 @@ func Test_Errors(t *testing.T) {
 
 	for _, tst := range tests {
 		gotError := false
-		tokens, err := parseExpression([]byte(tst.Expression), 0)
+		tokens, err := Parse([]byte(tst.Expression), 0)
 		if err != nil {
 			gotError = true
 			errMessage := err.Error()
@@ -188,7 +188,7 @@ func Test_Errors(t *testing.T) {
 				t.Errorf(tst.Expression + "\n\texpected error `" + string(tst.Expected) + "`\n\tbut got `" + errMessage + "`")
 			}
 		} else {
-			_, _, err := evaluateExpression(tokens, nil)
+			_, _, err := Evaluate(tokens, nil)
 			if err != nil {
 				gotError = true
 				errMessage := err.Error()
@@ -206,16 +206,16 @@ func Test_Errors(t *testing.T) {
 func Benchmark_ModifiedNumericLiteral_WithParsing(b *testing.B) {
 	expression := `(2) + (2) == (4)`
 	for i := 0; i < b.N; i++ {
-		tokens, _ := parseExpression([]byte(expression), 0)
-		_, _, _ = evaluateExpression(tokens, nil)
+		tokens, _ := Parse([]byte(expression), 0)
+		_, _, _ = Evaluate(tokens, nil)
 	}
 }
 
 func Benchmark_ModifiedNumericLiteral_WithoutParsing(b *testing.B) {
 	expression := `(2) + (2) == (4)`
-	tokens, _ := parseExpression([]byte(expression), 0)
+	tokens, _ := Parse([]byte(expression), 0)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, _, _ = evaluateExpression(tokens, nil)
+		_, _, _ = Evaluate(tokens, nil)
 	}
 }

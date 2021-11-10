@@ -1,8 +1,8 @@
-# Expression parser in Go
+# Expression parser/evaluator in Go
 
 ## What is it?
 
-This project is a renewed version of expression parser used in [jsonslice](https://github.com/bhmj/jsonslice). It is still work in progress so use it with caution.
+This project is a renewed version of expression parser/evaluator used in [jsonslice](https://github.com/bhmj/jsonslice). It is still work in progress so use it with caution.
 
 ## Check it out
 

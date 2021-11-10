@@ -35,7 +35,7 @@ lint:
 	gocyclo -over 18 .
 
 test: 
-	go test ./...
+	go test -cover ./...
 
 .PHONY: all configure help build run lint test
 

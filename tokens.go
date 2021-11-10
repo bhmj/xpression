@@ -15,27 +15,11 @@ func readNumber(path []byte, i int) (int, *Token, error) {
 }
 
 func readString(path []byte, i int) (int, *Token, error) {
-	bound := path[i]
-	done := false
-	escaped := false
-	i++ // quote
-	s := i
-	l := len(path)
-	for i < l && !done {
-		ch := path[i]
-		if ch == bound && !escaped {
-			break
-		}
-		escaped = ch == '\\' && !escaped
-		i++
+	e, err := skipString(path, i)
+	if err != nil {
+		return i, nil, err
 	}
-	if i == l && !done {
-		return s, nil, errUnexpectedEndOfString
-	}
-	e := i
-	i++ // unquote
-
-	return i, &Token{Category: tcLiteral, Operand: Operand{Type: otString, Str: path[s:e]}}, nil
+	return e, &Token{Category: tcLiteral, Operand: Operand{Type: otString, Str: path[i+1 : e-1]}}, nil
 }
 
 func readBool(path []byte, i int) (int, *Token, error) {
@@ -106,6 +90,8 @@ func readJsonpath(path []byte, i int) (int, *Token, error) {
 }
 
 func skipNumber(input []byte, i int) int {
+	// numbers: -2  0.3  .3  1e2  -0.1e-2
+	// [-][0[.[0]]][e[-]0]
 	l := len(input)
 	if i < l && input[i] == '-' {
 		i++
