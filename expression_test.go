@@ -151,7 +151,7 @@ func Test_Expressions(t *testing.T) {
 
 	for _, tst := range tests {
 		// println(tst.Query)
-		tokens, err := Parse([]byte(tst.Expression), 0)
+		tokens, err := Parse([]byte(tst.Expression))
 		if err != nil {
 			t.Errorf(tst.Expression + " : " + err.Error())
 		} else {
@@ -189,7 +189,7 @@ func Test_Errors(t *testing.T) {
 
 	for _, tst := range tests {
 		gotError := false
-		tokens, err := Parse([]byte(tst.Expression), 0)
+		tokens, err := Parse([]byte(tst.Expression))
 		if err != nil {
 			gotError = true
 			errMessage := err.Error()
@@ -215,14 +215,14 @@ func Test_Errors(t *testing.T) {
 func Benchmark_ModifiedNumericLiteral_WithParsing(b *testing.B) {
 	expression := `(2) + (2) == (4)`
 	for i := 0; i < b.N; i++ {
-		tokens, _ := Parse([]byte(expression), 0)
+		tokens, _ := Parse([]byte(expression))
 		_, _, _ = Evaluate(tokens, nil)
 	}
 }
 
 func Benchmark_ModifiedNumericLiteral_WithoutParsing(b *testing.B) {
 	expression := `(2) + (2) == (4)`
-	tokens, _ := Parse([]byte(expression), 0)
+	tokens, _ := Parse([]byte(expression))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, _, _ = Evaluate(tokens, nil)

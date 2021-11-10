@@ -14,7 +14,7 @@ func main() {
 		return
 	}
 
-	tokens, err := xpression.Parse([]byte(os.Args[1]), 0)
+	tokens, err := xpression.Parse([]byte(os.Args[1]))
 
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)

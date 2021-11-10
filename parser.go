@@ -4,9 +4,10 @@ import (
 	"fmt"
 )
 
-func Parse(path []byte, i int) ([]*Token, error) {
+func Parse(path []byte) ([]*Token, error) {
 	path = path[:trimSpaces(path)]
 	l := len(path)
+	i := 0
 
 	// lexer
 	tokens := make([]*Token, 0)
