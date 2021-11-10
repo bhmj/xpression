@@ -344,6 +344,9 @@ func toBoolean(op *Operand) bool {
 	return result
 }
 
+// ToBoolean is a public alias
+func ToBoolean(op *Operand) bool { return toBoolean(op) }
+
 // logic complies to [1] 7.2.13 (3) only for BYTES not codepoints!
 func compareSlices(s1 []byte, s2 []byte) int {
 	if len(s1)+len(s2) == 0 {
