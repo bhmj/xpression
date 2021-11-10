@@ -21,7 +21,7 @@ func main() {
 	} else {
 		printParsedExpression(tokens)
 
-		result, _, err := xpression.Evaluate(tokens, variableGetter)
+		result, err := xpression.Evaluate(tokens, variableGetter)
 		if err != nil {
 			fmt.Printf("Error: %v\n", err)
 		} else {

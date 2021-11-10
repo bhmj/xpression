@@ -48,12 +48,24 @@ var (
 
 type VariableFunc func([]byte) (*Operand, error)
 
-// Evaluate evaluates the expression starting from the head of the token list.
+// Evaluate evaluates the previously parsed expression
+func Evaluate(tokens []*Token, varFunc VariableFunc) (*Operand, error) {
+	op, tokens, err := evaluate(tokens, varFunc)
+	if err != nil {
+		return nil, err
+	}
+	if len(tokens) > 0 {
+		return nil, errNotEnoughArguments
+	}
+	return op, nil
+}
+
+// evaluate evaluates expression stored in `tokens` in prefix notation (NPN).
 // Usually it takes an operator from the head of the list and then takes 1 or 2 operands from the list,
 // depending of the operator type (unary or binary).
-// The extreme case is when there is only one operand exist in the list.
+// The extreme case is when there is only one operand in the list.
 // This function calls itself recursively to evalute operands if needed.
-func Evaluate(tokens []*Token, varFunc VariableFunc) (*Operand, []*Token, error) {
+func evaluate(tokens []*Token, varFunc VariableFunc) (*Operand, []*Token, error) {
 	if len(tokens) == 0 {
 		return nil, nil, errNotEnoughArguments
 	}
@@ -73,12 +85,12 @@ func Evaluate(tokens []*Token, varFunc VariableFunc) (*Operand, []*Token, error)
 		left  *Operand
 		right *Operand
 	)
-	left, tokens, err = Evaluate(tokens[1:], varFunc)
+	left, tokens, err = evaluate(tokens[1:], varFunc)
 	if err != nil {
 		return nil, tokens, err
 	}
 	if operatorDetails[tok.Operator].Arguments > 1 {
-		right, tokens, err = Evaluate(tokens, varFunc)
+		right, tokens, err = evaluate(tokens, varFunc)
 		if err != nil {
 			return nil, tokens, err
 		}
