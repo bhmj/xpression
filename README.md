@@ -104,7 +104,7 @@ ok      github.com/Knetic/govaluate     9.810s
 - [x] parser test coverage
 - [x] expression evaluation
 - [x] evaluator test coverage
-- [+] add external reference type (node reference in jsonslice)
+- [x] add external reference type (node reference in jsonslice)
 - [ ] Unicode support!
 
 ## Contributing
