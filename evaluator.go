@@ -53,7 +53,6 @@ func Evaluate(tokens []*Token, varFunc VariableFunc) (*Operand, error) {
 	if len(tokens) == 0 {
 		return nil, errNotEnoughArguments
 	}
-	root := tokens[0]
 	for i := range tokens {
 		// reset reduced (calculated) types to original
 		tokens[i].ReducedType = tokens[i].Type
@@ -65,9 +64,7 @@ func Evaluate(tokens []*Token, varFunc VariableFunc) (*Operand, error) {
 	if len(tokens) > 0 {
 		return nil, errNotEnoughArguments
 	}
-	root.Operand = *op
-	root.Operand.Type = op.ReducedType
-	return &root.Operand, nil
+	return op, nil
 }
 
 // evaluate evaluates expression stored in `tokens` in prefix notation (NPN).

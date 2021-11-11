@@ -200,10 +200,11 @@ func Test_MultipleEvaluation(t *testing.T) {
 			},
 		},
 		{
-			`(123 == "123") == false`,
+			`(@.var == "1") == false`,
 			[]probePair{
-				{``, `false`},
-				{``, `false`},
+				{`null`, `true`},
+				{`"abc"`, `true`},
+				{`"1"`, `false`},
 			},
 		},
 	}

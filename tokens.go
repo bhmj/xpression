@@ -5,6 +5,10 @@ import (
 	"strconv"
 )
 
+func SetLiteral(tok *Token) {
+	tok.Category = tcLiteral
+}
+
 func readNumber(path []byte, i int) (int, *Token, error) {
 	e := skipNumber(path, i)
 	f, err := strconv.ParseFloat(string(path[i:e]), 64)
