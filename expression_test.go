@@ -169,9 +169,7 @@ func Test_Expressions(t *testing.T) {
 			if err != nil {
 				t.Errorf(tst.Expression + " : " + err.Error())
 			}
-			token := &Token{Category: tcLiteral, Operand: *operand}
-			result := token.String()
-
+			result := operand.String()
 			if result != tst.Expected {
 				t.Errorf(tst.Expression + "\n\texpected `" + string(tst.Expected) + "`\n\tbut got  `" + result + "`")
 			}

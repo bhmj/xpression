@@ -56,31 +56,35 @@ Evaluate `(2) + (2) == (4)`
 
 ```diff
 $ go test -bench=. -benchmem -benchtime=4s
-goos: windows
+goos: darwin
 goarch: amd64
 pkg: github.com/bhmj/xpression
-Benchmark_ModifiedNumericLiteral_WithParsing-4         1252026    3753 ns/op    1144 B/op   24 allocs/op
-Benchmark_ModifiedNumericLiteral_WithoutParsing-4     32295195     158 ns/op       0 B/op    0 allocs/op
+cpu: Intel(R) Core(TM) i9-9880H CPU @ 2.30GHz
+Benchmark_ModifiedNumericLiteral_WithParsing-16        2714204    1853 ns/op    1272 B/op   26 allocs/op
+Benchmark_ModifiedNumericLiteral_WithoutParsing-16    31129712   143.9 ns/op     128 B/op    2 allocs/op
 PASS
-ok      github.com/bhmj/xpression       16.605
+ok      github.com/bhmj/xpression       12.363s
 ```
 
 The same expression evaluated with [github.com/Knetic/govaluate](https://github.com/Knetic/govaluate) :
 
 ```diff
 $ go test -bench='LiteralModifiers' -benchmem -benchtime=4s
-goos: windows
+goos: darwin
 goarch: amd64
 pkg: github.com/Knetic/govaluate
-BenchmarkEvaluationLiteralModifiers_WithParsing-4       559497    8499 ns/op    2272 B/op   49 allocs/op
-BenchmarkEvaluationLiteralModifiers-4                 10908465     403 ns/op       8 B/op    1 allocs/op
+cpu: Intel(R) Core(TM) i9-9880H CPU @ 2.30GHz
+BenchmarkEvaluationLiteralModifiers_WithParsing-16     1000000    4019 ns/op    2208 B/op    43 allocs/op
+BenchmarkEvaluationLiteralModifiers-16                30173640   147.2 ns/op       8 B/op     1 allocs/op
 PASS
-ok      github.com/Knetic/govaluate     12.603s
+ok      github.com/Knetic/govaluate     9.810s
 ```
 
 
 ## Changelog
 
+**0.7.x** (2021-11-11) -- WIP  
+**0.7.0** (2021-11-10) -- project renamed to `xpression`  
 **0.6.0** (2021-11-05) -- a remainder operator `%` added. Benchmarks added. Some optimization done.  
 **0.5.0** (2021-11-04) -- Tests added. Multiple bugs fixed.  
 **0.4.0** (2021-11-02) -- Expression evaluation.  

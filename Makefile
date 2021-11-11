@@ -36,6 +36,7 @@ lint:
 
 test: 
 	go test -cover ./...
+	go test -benchmem -bench=.
 
 .PHONY: all configure help build run lint test
 

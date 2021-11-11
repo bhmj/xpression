@@ -6,6 +6,7 @@ package xpression
 import (
 	"bytes"
 	"math"
+	"regexp"
 	"strconv"
 )
 
@@ -52,10 +53,6 @@ type VariableFunc func([]byte) (*Operand, error)
 func Evaluate(tokens []*Token, varFunc VariableFunc) (*Operand, error) {
 	if len(tokens) == 0 {
 		return nil, errNotEnoughArguments
-	}
-	for i := range tokens {
-		// reset reduced (calculated) types to original
-		tokens[i].ReducedType = tokens[i].Type
 	}
 	op, tokens, err := evaluate(tokens, varFunc)
 	if err != nil {
@@ -126,93 +123,87 @@ func execOperator(op Operator, left *Operand, right *Operand) (*Operand, error) 
 // doArithmetic actually evaluates the arithmetic operators.
 // Note the special case of string concatenation: string + any_type -> string
 func doArithmetic(op Operator, left *Operand, right *Operand) (*Operand, error) {
-	if op == opPlus && (left.ReducedType|right.ReducedType)&otString > 0 {
+	result := Operand{}
+	if op == opPlus && (left.Type|right.Type)&otString > 0 {
 		// string concatenation
-		toString(left)
-		toString(right)
-		left.Str = append(left.Str[:len(left.Str):len(left.Str)], right.Str...) // cannot use left buffer, must reallocate!
-		return left, nil
+		lval := toString(left)
+		rval := toString(right)
+		result.Type = otString
+		result.Str = append(lval[:len(lval):len(lval)], rval...) // cannot use left buffer, must reallocate!
+		return &result, nil
 	}
 
 	switch op {
 	case opUnaryMinus:
-		left.Number = -toNumber(left).Number
+		result.Number = -toNumber(left)
 	case opPlus:
-		left.Number = toNumber(left).Number + toNumber(right).Number
+		result.Number = toNumber(left) + toNumber(right)
 	case opMinus:
-		left.Number = toNumber(left).Number - toNumber(right).Number
+		result.Number = toNumber(left) - toNumber(right)
 	case opMultiply:
-		left.Number = toNumber(left).Number * toNumber(right).Number
+		result.Number = toNumber(left) * toNumber(right)
 	case opDivide:
-		left.Number = toNumber(left).Number / toNumber(right).Number
+		result.Number = toNumber(left) / toNumber(right)
 	case opRemainder:
-		left.Number = float64(int64(toNumber(left).Number) % int64(toNumber(right).Number))
+		result.Number = float64(int64(toNumber(left)) % int64(toNumber(right)))
 	case opExponentiation:
-		left.Number = math.Pow(toNumber(left).Number, toNumber(right).Number)
+		result.Number = math.Pow(toNumber(left), toNumber(right))
 	case opBitwiseAND:
-		left.Number = float64(int64(toNumber(left).Number) & int64(toNumber(right).Number))
+		result.Number = float64(int64(toNumber(left)) & int64(toNumber(right)))
 	case opBitwiseOR:
-		left.Number = float64(int64(toNumber(left).Number) | int64(toNumber(right).Number))
+		result.Number = float64(int64(toNumber(left)) | int64(toNumber(right)))
 	case opBitwiseXOR:
-		left.Number = float64(int64(toNumber(left).Number) ^ int64(toNumber(right).Number))
+		result.Number = float64(int64(toNumber(left)) ^ int64(toNumber(right)))
 	case opBitwiseNOT:
-		left.Number = float64(^int64(toNumber(left).Number))
+		result.Number = float64(^int64(toNumber(left)))
 	case opShiftLeft:
-		left.Number = float64(int64(toNumber(left).Number) << int64(toNumber(right).Number))
+		result.Number = float64(int64(toNumber(left)) << int64(toNumber(right)))
 	case opShiftRight:
-		left.Number = float64(int64(toNumber(left).Number) >> int64(toNumber(right).Number))
+		result.Number = float64(int64(toNumber(left)) >> int64(toNumber(right)))
 	}
-	left.ReducedType = otNumber
-	return left, nil
+	result.Type = otNumber
+	return &result, nil
 }
 
 // doComaparison compares two operands. The special case is string regexp match which works only on strings.
 // Otherwise works like JS comparison.
 func doComparison(op Operator, left *Operand, right *Operand) (*Operand, error) {
-	result := left
-
-	comparedTypes := left.ReducedType | right.ReducedType
+	comparedTypes := left.Type | right.Type
 
 	// [1] 7.2.14 (2,3)
 	if op == opEqual && comparedTypes&(otNull|otUndefined) > 0 {
 		// at least one side is null or undefined:
-		result.ReducedType = otBoolean
+		result := Operand{Type: otBoolean}
 		result.Bool = (comparedTypes | otNull | otUndefined) == (otNull | otUndefined) // both are null or undefined
-		return result, nil
+		return &result, nil
 	}
 	if op == opRegexMatch || op == opNotRegexMatch {
 		// one of them must be regexp
 		if comparedTypes&otRegexp != otRegexp {
-			result.ReducedType = otBoolean
-			result.Bool = false
-			return result, nil
+			return &Operand{Type: otBoolean, Bool: false}, nil
 		}
 		// other must be non-regexp
 		if comparedTypes-otRegexp == 0 {
-			result.ReducedType = otBoolean
-			result.Bool = false
-			return result, nil
+			return &Operand{Type: otBoolean, Bool: false}, nil
 		}
 		// convert non-regexp part to string and compare
-		if right.ReducedType == otRegexp {
-			toString(left)
-			return doCompareString(op, left, right) // regexp should be second argument
+		if right.Type == otRegexp {
+			lval := toString(left)
+			return doCompareRegexp(op, lval, right.Regexp) // regexp should be second argument
 		}
-		toString(right)
-		return doCompareString(op, right, left) // regexp should be second argument
+		rval := toString(right)
+		return doCompareRegexp(op, rval, left.Regexp) // regexp should be second argument
 	}
 
 	// [1] 7.2.15 (1)
-	if (op == opStrictEqual || op == opStrictNotEqual) && left.ReducedType != right.ReducedType {
+	if (op == opStrictEqual || op == opStrictNotEqual) && left.Type != right.Type {
 		// strict comparison: types must match
-		result.ReducedType = otBoolean
-		result.Bool = false
-		return result, nil
+		return &Operand{Type: otBoolean, Bool: false}, nil
 	}
 
 	// [1] 7.2.15 (4)
 	if comparedTypes == otString {
-		return doCompareString(op, left, right)
+		return doCompareString(op, toString(left), toString(right))
 	}
 
 	// [1] 7.2.14 (5,6,7?,8?)
@@ -230,145 +221,136 @@ func doLogic(op Operator, left *Operand, right *Operand) (*Operand, error) {
 	}
 
 	// logical NOT
-	left.ReducedType = otBoolean
-	left.Bool = !lval
-	return left, nil
+	return &Operand{Type: otBoolean, Bool: !lval}, nil
 }
 
 // doCompareNumber compares two numbers.
-func doCompareNumber(op Operator, left *Operand, right *Operand) (*Operand, error) {
-	res := left
-	if math.IsNaN(left.Number) || math.IsNaN(right.Number) { // [1] 7.2.14 (4.h)
-		res.ReducedType = otBoolean
-		res.Bool = false
-		return res, nil
+func doCompareNumber(op Operator, left float64, right float64) (*Operand, error) {
+	res := Operand{Type: otBoolean}
+	if math.IsNaN(left) || math.IsNaN(right) { // [1] 7.2.14 (4.h)
+		return &res, nil
 	}
-	if math.IsInf(left.Number, -1) || math.IsInf(right.Number, +1) { // [1] 7.2.14 (4.i)
-		res.ReducedType = otBoolean
+	if math.IsInf(left, -1) || math.IsInf(right, +1) { // [1] 7.2.14 (4.i)
 		res.Bool = true
-		return res, nil
+		return &res, nil
 	}
-	if math.IsInf(left.Number, +1) || math.IsInf(right.Number, -1) { // [1] 7.2.14 (4.j)
-		res.ReducedType = otBoolean
+	if math.IsInf(left, +1) || math.IsInf(right, -1) { // [1] 7.2.14 (4.j)
 		res.Bool = false
-		return res, nil
+		return &res, nil
 	}
 	switch op {
 	case opG:
-		res.Bool = left.Number > right.Number
+		res.Bool = left > right
 	case opL:
-		res.Bool = left.Number < right.Number
+		res.Bool = left < right
 	case opEqual, opStrictEqual:
-		res.Bool = left.Number == right.Number
+		res.Bool = left == right
 	case opNotEqual, opStrictNotEqual:
-		res.Bool = left.Number != right.Number
+		res.Bool = left != right
 	case opGE:
-		res.Bool = left.Number >= right.Number
+		res.Bool = left >= right
 	case opLE:
-		res.Bool = left.Number <= right.Number
+		res.Bool = left <= right
 	}
-	res.ReducedType = otBoolean
-	return res, nil
+	return &res, nil
 }
 
 // doCompareString compares two strings.
-func doCompareString(op Operator, left *Operand, right *Operand) (*Operand, error) {
-	res := left
+func doCompareString(op Operator, left []byte, right []byte) (*Operand, error) {
+	res := Operand{Type: otBoolean}
 	switch op {
 	case opEqual, opStrictEqual:
-		res.Bool = compareSlices(left.Str, right.Str) == 0
+		res.Bool = compareSlices(left, right) == 0
 	case opG:
-		res.Bool = compareSlices(left.Str, right.Str) > 0
+		res.Bool = compareSlices(left, right) > 0
 	case opL:
-		res.Bool = compareSlices(left.Str, right.Str) < 0
+		res.Bool = compareSlices(left, right) < 0
 	case opGE:
-		res.Bool = compareSlices(left.Str, right.Str) >= 0
+		res.Bool = compareSlices(left, right) >= 0
 	case opLE:
-		res.Bool = compareSlices(left.Str, right.Str) <= 0
+		res.Bool = compareSlices(left, right) <= 0
 	case opNotEqual, opStrictNotEqual:
-		res.Bool = compareSlices(left.Str, right.Str) != 0
-	case opRegexMatch:
-		res.Bool = right.Regexp.MatchString(string(left.Str))
-	case opNotRegexMatch:
-		res.Bool = !right.Regexp.MatchString(string(left.Str))
-	default:
-		return res, errUnknownToken
+		res.Bool = compareSlices(left, right) != 0
 	}
-	res.ReducedType = otBoolean
-	return res, nil
+	return &res, nil
+}
+
+// doCompareRegexp matches a string to regexp
+func doCompareRegexp(op Operator, left []byte, right *regexp.Regexp) (*Operand, error) {
+	res := Operand{Type: otBoolean}
+	if op == opRegexMatch {
+		res.Bool = right.MatchString(string(left))
+	} else {
+		res.Bool = !right.MatchString(string(left))
+	}
+	return &res, nil
 }
 
 // toString converts operand to string following JavaScript conversion rules.
-func toString(op *Operand) *Operand {
-	if op.ReducedType == otString {
-		return op
+func toString(op *Operand) []byte {
+	if op.Type == otString {
+		return op.Str
 	}
 
-	result := op
-
-	switch op.ReducedType {
+	switch op.Type {
 	case otUndefined:
-		result.Str = []byte("undefined")
+		return []byte("undefined")
 	case otNull:
-		result.Str = []byte("null")
+		return []byte("null")
 	case otBoolean:
 		if op.Bool {
-			result.Str = []byte("true")
+			return []byte("true")
 		} else {
-			result.Str = []byte("false")
+			return []byte("false")
 		}
 	case otNumber:
-		result.Str = []byte(strconv.FormatFloat(op.Number, 'f', -1, 64))
+		return []byte(strconv.FormatFloat(op.Number, 'f', -1, 64))
 	}
-	result.ReducedType = otString
 
-	return result
+	return nil // not reaching here
 }
 
 // toNumber converts operand to number following JavaScript conversion rules. See [1] 7.1.4
-func toNumber(op *Operand) *Operand {
-	if op.ReducedType == otNumber {
-		return op
+func toNumber(op *Operand) float64 {
+	if op.Type == otNumber {
+		return op.Number
 	}
 
-	result := op
-
-	switch op.ReducedType {
+	switch op.Type {
 	case otUndefined:
-		result.Number = math.NaN()
+		return math.NaN()
 	case otNull:
-		result.Number = 0
+		return 0
 	case otBoolean:
 		if op.Bool {
-			result.Number = 1
+			return 1
 		} else {
-			result.Number = 0
+			return 0
 		}
 	case otString:
 		if len(op.Str) == 0 { // [1] 7.1.4.1.2 (1)
-			result.Number = 0
+			return 0
 		} else {
-			var err error
-			result.Number, err = strconv.ParseFloat(string(op.Str), 64)
+			f, err := strconv.ParseFloat(string(op.Str), 64)
 			if err != nil { // [1] 7.1.4.1.1 (3)
-				result.Number = math.NaN()
+				return math.NaN()
 			}
+			return f
 		}
 	case otRegexp:
-		result.Number = math.NaN()
+		return math.NaN()
 	}
-	result.ReducedType = otNumber
-	return result
+	return 0 // not reaching here
 }
 
 // toBoolean converts operand to boolean following JavaScript conversion rules.
 func toBoolean(op *Operand) bool {
-	if op.ReducedType == otBoolean {
+	if op.Type == otBoolean {
 		return op.Bool
 	}
 
 	result := false
-	switch op.ReducedType {
+	switch op.Type {
 	case otUndefined, otNull, otRegexp:
 	case otString:
 		result = len(op.Str) > 0
