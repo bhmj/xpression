@@ -83,7 +83,7 @@ ok      github.com/Knetic/govaluate     9.810s
 
 ## Changelog
 
-**0.8.0** (2021-11-11) -- hex numbers support. Production ready.
+**0.8.0** (2021-11-11) -- hex numbers support. Production ready.  
 **0.7.x** (2021-11-11) -- WIP  
 **0.7.0** (2021-11-10) -- project renamed to `xpression`  
 **0.6.0** (2021-11-05) -- a remainder operator `%` added. Benchmarks added. Some optimization done.  
