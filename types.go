@@ -114,8 +114,6 @@ var operatorSpelling = []struct {
 	{[]byte("!"), opLogicalNOT},
 	{[]byte("~"), opBitwiseNOT},
 	{[]byte("-"), opUnaryMinus},
-	{[]byte("("), opLeftParenthesis},
-	{[]byte(")"), opRightParenthesis},
 }
 
 var operatorDetails = map[Operator]OperatorDetail{

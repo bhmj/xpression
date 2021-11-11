@@ -140,6 +140,7 @@ func Test_Expressions(t *testing.T) {
 		{`/aa/ || "a"`, `"a"`},
 		// variables
 		{`@.foo`, `123`},
+		{`@.foo.length() + 1`, `457`},
 		// complex comparisons
 		{`(123 == "123") == 123`, `false`},
 	}
@@ -147,6 +148,9 @@ func Test_Expressions(t *testing.T) {
 	varFunc := func(str []byte) (*Operand, error) {
 		if string(str) == "@.foo" {
 			return Number(123), nil
+		}
+		if string(str) == "@.foo.length()" {
+			return Number(456), nil
 		}
 		return nil, errUnknownToken
 	}
