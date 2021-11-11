@@ -6,7 +6,8 @@ var (
 	errUnknownToken,
 	errUnexpectedEndOfString,
 	errMismatchedParentheses,
-	errNotEnoughArguments error
+	errNotEnoughArguments,
+	errTooLongHexadecimal error
 )
 
 func init() {
@@ -14,4 +15,5 @@ func init() {
 	errUnexpectedEndOfString = errors.New("unexpected end of string")
 	errMismatchedParentheses = errors.New("mismatched parentheses")
 	errNotEnoughArguments = errors.New("not enough arguments")
+	errTooLongHexadecimal = errors.New("too long hexadecimal")
 }

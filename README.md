@@ -41,7 +41,7 @@ Parentheses | `(` `)`
 <b>Data types</b> | &nbsp;
 --- | ---
 String constants | `'string'` or `"string"`
-Numeric | 64-bit integers or floats
+Numeric | 64-bit integers or floats in decimal or hexadecimal form: `123` or `0.123` or `1.2e34` or `0x12a` or `0x12A`
 Boolean | `true` or `false`. Comparison results in boolean value.
 Regexp | `/expression/` with modifiers:<br>`i` (case-insensitive), `m` (multiline), `s` (single-line), `U` (ungreedy)
 Other | `null`
@@ -83,6 +83,7 @@ ok      github.com/Knetic/govaluate     9.810s
 
 ## Changelog
 
+**0.8.0** (2021-11-11) -- hex numbers support. Production ready.
 **0.7.x** (2021-11-11) -- WIP  
 **0.7.0** (2021-11-10) -- project renamed to `xpression`  
 **0.6.0** (2021-11-05) -- a remainder operator `%` added. Benchmarks added. Some optimization done.  
@@ -103,8 +104,7 @@ ok      github.com/Knetic/govaluate     9.810s
 - [x] parser test coverage
 - [x] expression evaluation
 - [x] evaluator test coverage
-- [ ] refactor: operatorSpelling + operatorDetails -> map[spelling]{code, assoc, prec, args}. Store pointer to struct in Operand.
-- [ ] add external reference type (node reference in jsonslice)
+- [+] add external reference type (node reference in jsonslice)
 - [ ] Unicode support!
 
 ## Contributing

@@ -9,9 +9,21 @@ func SetLiteral(tok *Token) {
 	tok.Category = tcLiteral
 }
 
+const (
+	numFloat int = iota
+	numHex
+)
+
 func readNumber(path []byte, i int) (int, *Token, error) {
-	e := skipNumber(path, i)
-	f, err := strconv.ParseFloat(string(path[i:e]), 64)
+	var f float64
+	var err error
+	e, typ := skipNumber(path, i)
+	switch typ {
+	case numFloat:
+		f, err = strconv.ParseFloat(string(path[i:e]), 64)
+	case numHex:
+		f, err = readHex(path[i+2 : e])
+	}
 	if err != nil {
 		return i, nil, err
 	}
@@ -73,6 +85,31 @@ func readRegexp(path []byte, i int) (int, *Token, error) {
 	return i, &Token{Category: tcLiteral, Operand: Operand{Type: otRegexp, Regexp: reg}}, nil
 }
 
+func readHex(input []byte) (float64, error) {
+	num := uint64(0)
+	nibble := 0
+	for _, b := range input {
+		if nibble > 15 {
+			return 0, errTooLongHexadecimal
+		}
+		add := byte(0)
+		if b >= '0' && b <= '9' {
+			add = b - '0'
+		} else if b >= 'A' && b <= 'F' {
+			add = b - 'A' + 10
+		} else if b >= 'a' && b <= 'f' {
+			add = b - 'a' + 10
+		}
+		num <<= 4
+		num += uint64(add)
+		if num > 0 {
+			nibble++
+		}
+	}
+	signed := int64(num)
+	return float64(signed), nil
+}
+
 func readVar(path []byte, i int) (int, *Token, error) {
 	var err error
 	l := len(path)
@@ -90,10 +127,14 @@ func readVar(path []byte, i int) (int, *Token, error) {
 	return i, &Token{Category: tcVariable, Operand: Operand{Type: otVariable, Str: path[s:i]}}, nil
 }
 
-func skipNumber(input []byte, i int) int {
+// skipNumber skips number returning its end and type (numFloat or numHex)
+func skipNumber(input []byte, i int) (int, int) {
+	l := len(input)
+	if input[i] == '0' && i < l-1 && input[i+1] == 'x' {
+		return skipHex(input, i+2)
+	}
 	// numbers: -2  0.3  .3  1e2  -0.1e-2
 	// [-][0[.[0]]][e[-]0]
-	l := len(input)
 	if i < l && input[i] == '-' {
 		i++
 	}
@@ -106,14 +147,24 @@ func skipNumber(input []byte, i int) int {
 	if i < l && (input[i] == 'E' || input[i] == 'e') {
 		i++
 	} else {
-		return i
+		return i, numFloat
 	}
 	if i < l && (input[i] == '+' || input[i] == '-') {
 		i++
 	}
 	for ; i < l && (input[i] >= '0' && input[i] <= '9'); i++ {
 	}
-	return i
+	return i, numFloat
+}
+
+// skipHex skips hexadecimal digits
+func skipHex(input []byte, i int) (int, int) {
+	for ; i < len(input); i++ {
+		if !((input[i] >= '0' && input[i] <= '9') || (input[i] >= 'a' && input[i] <= 'f') || (input[i] >= 'A' && input[i] <= 'F')) {
+			break
+		}
+	}
+	return i, 1
 }
 
 func skipString(input []byte, i int) (int, error) {

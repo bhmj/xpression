@@ -143,6 +143,9 @@ func Test_Expressions(t *testing.T) {
 		{`@.foo.length() + 1`, `457`},
 		// complex comparisons
 		{`(123 == "123") == 123`, `false`},
+		// hex numbers
+		{`123 == 0x7b`, `true`},
+		{`123 == 0x7B`, `true`},
 	}
 
 	varFunc := func(str []byte) (*Operand, error) {
@@ -265,6 +268,7 @@ func Test_Errors(t *testing.T) {
 		{`"a" =~ /a(b/`, "error parsing regexp: missing closing ): `a(b` at 12: "},
 		{`?`, errUnknownToken.Error() + ` at 0: ?`},
 		{`ABC`, errUnknownToken.Error()},
+		{`0x123456789ABCDEF012345`, errTooLongHexadecimal.Error() + ` at 0: 0x123456789ABCDEF012345`},
 	}
 
 	for _, tst := range tests {
