@@ -231,6 +231,20 @@ func doLogic(op Operator, left *Operand, right *Operand) (*Operand, error) {
 // doCompareNumber compares two numbers.
 func doCompareNumber(op Operator, left *Operand, right *Operand) (*Operand, error) {
 	res := left
+	if math.IsNaN(left.Number) || math.IsNaN(right.Number) { // [1] 7.2.14 (4.h)
+		res.Type = otBoolean
+		return res, nil
+	}
+	if math.IsInf(left.Number, -1) || math.IsInf(right.Number, +1) { // [1] 7.2.14 (4.i)
+		res.Type = otBoolean
+		res.Bool = true
+		return res, nil
+	}
+	if math.IsInf(left.Number, +1) || math.IsInf(right.Number, -1) { // [1] 7.2.14 (4.j)
+		res.Type = otBoolean
+		res.Bool = false
+		return res, nil
+	}
 	switch op {
 	case opG:
 		res.Bool = left.Number > right.Number

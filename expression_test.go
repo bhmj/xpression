@@ -149,8 +149,16 @@ func Test_Expressions(t *testing.T) {
 		return nil, errUnknownToken
 	}
 
+	l := len(tests)
+	for i := 0; i < l; i++ {
+		// same tests without spaces (except in strings)
+		tests = append(tests, struct {
+			Expression string
+			Expected   string
+		}{string(unspace([]byte(tests[i].Expression))), tests[i].Expected})
+	}
+
 	for _, tst := range tests {
-		// println(tst.Query)
 		tokens, err := Parse([]byte(tst.Expression))
 		if err != nil {
 			t.Errorf(tst.Expression + " : " + err.Error())
@@ -227,4 +235,22 @@ func Benchmark_ModifiedNumericLiteral_WithoutParsing(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, _ = Evaluate(tokens, nil)
 	}
+}
+
+func unspace(buf []byte) []byte {
+	var result []byte
+	r := 0
+	bound := byte(0)
+	for r < len(buf) {
+		if (buf[r] == '\'' || buf[r] == '"') && bound == 0 {
+			bound = buf[r]
+		} else if buf[r] == bound {
+			bound = 0
+		}
+		if (buf[r] != ' ' && buf[r] != '\t') || bound > 0 {
+			result = append(result, buf[r])
+		}
+		r++
+	}
+	return result
 }
