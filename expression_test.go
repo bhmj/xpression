@@ -140,6 +140,8 @@ func Test_Expressions(t *testing.T) {
 		{`/aa/ || "a"`, `"a"`},
 		// variables
 		{`@.foo`, `123`},
+		// complex comparisons
+		{`(123 == "123") == 123`, `false`},
 	}
 
 	varFunc := func(str []byte) (*Operand, error) {
@@ -176,6 +178,73 @@ func Test_Expressions(t *testing.T) {
 		}
 	}
 }
+
+func Test_MultipleEvaluation(t *testing.T) {
+
+	type probePair struct {
+		Variable string
+		Expected string
+	}
+	type testBundle struct {
+		Expression string
+		Probes     []probePair
+	}
+	testBundles := []testBundle{
+		{
+			`@.var == "1"`,
+			[]probePair{
+				{`null`, `false`},
+				{`"1"`, `true`},
+				{`"abc"`, `false`},
+				{`1`, `true`},
+			},
+		},
+		{
+			`(123 == "123") == false`,
+			[]probePair{
+				{``, `false`},
+				{``, `false`},
+			},
+		},
+	}
+
+	for _, bundle := range testBundles {
+		expression := bundle.Expression
+		for _, tst := range bundle.Probes {
+			varFunc := func(str []byte) (*Operand, error) {
+				switch string(tst.Variable) {
+				case "null":
+					return Null(), nil
+				case `"1"`:
+					return String("1"), nil
+				case `"abc"`:
+					return String("abc"), nil
+				case "1":
+					return Number(1), nil
+				}
+				return nil, errUnknownToken
+			}
+
+			tokens, err := Parse([]byte(expression))
+			if err != nil {
+				t.Errorf(expression + " : " + err.Error())
+			} else {
+				operand, err := Evaluate(tokens, varFunc)
+				if err != nil {
+					t.Errorf(expression + " : " + err.Error())
+				} else {
+					token := &Token{Category: tcLiteral, Operand: *operand}
+					result := token.String()
+
+					if result != tst.Expected {
+						t.Errorf(expression + "\n\texpected `" + string(tst.Expected) + "`\n\tbut got  `" + result + "`")
+					}
+				}
+			}
+		}
+	}
+}
+
 func Test_Errors(t *testing.T) {
 
 	tests := []struct {

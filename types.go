@@ -150,11 +150,12 @@ var operatorDetails = map[Operator]OperatorDetail{
 }
 
 type Operand struct {
-	Type   OperandType
-	Str    []byte
-	Number float64
-	Bool   bool
-	Regexp *regexp.Regexp
+	Type        OperandType
+	ReducedType OperandType
+	Str         []byte
+	Number      float64
+	Bool        bool
+	Regexp      *regexp.Regexp
 	// + node reference
 }
 
@@ -216,25 +217,25 @@ func (tok *Token) String() string {
 }
 
 func String(s string) *Operand {
-	return &Operand{Type: otString, Str: []byte(s)}
+	return &Operand{Type: otString, ReducedType: otString, Str: []byte(s)}
 }
 
 func Number(f float64) *Operand {
-	return &Operand{Type: otNumber, Number: f}
+	return &Operand{Type: otNumber, ReducedType: otNumber, Number: f}
 }
 
 func Boolean(b bool) *Operand {
-	return &Operand{Type: otBoolean, Bool: b}
+	return &Operand{Type: otBoolean, ReducedType: otBoolean, Bool: b}
 }
 
 func Null() *Operand {
-	return &Operand{Type: otNull}
+	return &Operand{Type: otNull, ReducedType: otNull}
 }
 
 func Undefined() *Operand {
-	return &Operand{Type: otUndefined}
+	return &Operand{Type: otUndefined, ReducedType: otUndefined}
 }
 
 func Regexp(r *regexp.Regexp) *Operand {
-	return &Operand{Type: otRegexp, Regexp: r}
+	return &Operand{Type: otRegexp, ReducedType: otRegexp, Regexp: r}
 }

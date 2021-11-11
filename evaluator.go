@@ -50,6 +50,14 @@ type VariableFunc func([]byte) (*Operand, error)
 
 // Evaluate evaluates the previously parsed expression
 func Evaluate(tokens []*Token, varFunc VariableFunc) (*Operand, error) {
+	if len(tokens) == 0 {
+		return nil, errNotEnoughArguments
+	}
+	root := tokens[0]
+	for i := range tokens {
+		// reset reduced (calculated) types to original
+		tokens[i].ReducedType = tokens[i].Type
+	}
 	op, tokens, err := evaluate(tokens, varFunc)
 	if err != nil {
 		return nil, err
@@ -57,7 +65,9 @@ func Evaluate(tokens []*Token, varFunc VariableFunc) (*Operand, error) {
 	if len(tokens) > 0 {
 		return nil, errNotEnoughArguments
 	}
-	return op, nil
+	root.Operand = *op
+	root.Operand.Type = op.ReducedType
+	return &root.Operand, nil
 }
 
 // evaluate evaluates expression stored in `tokens` in prefix notation (NPN).
@@ -119,7 +129,7 @@ func execOperator(op Operator, left *Operand, right *Operand) (*Operand, error) 
 // doArithmetic actually evaluates the arithmetic operators.
 // Note the special case of string concatenation: string + any_type -> string
 func doArithmetic(op Operator, left *Operand, right *Operand) (*Operand, error) {
-	if op == opPlus && (left.Type|right.Type)&otString > 0 {
+	if op == opPlus && (left.ReducedType|right.ReducedType)&otString > 0 {
 		// string concatenation
 		toString(left)
 		toString(right)
@@ -155,7 +165,7 @@ func doArithmetic(op Operator, left *Operand, right *Operand) (*Operand, error) 
 	case opShiftRight:
 		left.Number = float64(int64(toNumber(left).Number) >> int64(toNumber(right).Number))
 	}
-	left.Type = otNumber
+	left.ReducedType = otNumber
 	return left, nil
 }
 
@@ -164,30 +174,30 @@ func doArithmetic(op Operator, left *Operand, right *Operand) (*Operand, error) 
 func doComparison(op Operator, left *Operand, right *Operand) (*Operand, error) {
 	result := left
 
-	comparedTypes := left.Type | right.Type
+	comparedTypes := left.ReducedType | right.ReducedType
 
 	// [1] 7.2.14 (2,3)
 	if op == opEqual && comparedTypes&(otNull|otUndefined) > 0 {
 		// at least one side is null or undefined:
-		result.Type = otBoolean
+		result.ReducedType = otBoolean
 		result.Bool = (comparedTypes | otNull | otUndefined) == (otNull | otUndefined) // both are null or undefined
 		return result, nil
 	}
 	if op == opRegexMatch || op == opNotRegexMatch {
 		// one of them must be regexp
 		if comparedTypes&otRegexp != otRegexp {
-			result.Type = otBoolean
+			result.ReducedType = otBoolean
 			result.Bool = false
 			return result, nil
 		}
 		// other must be non-regexp
 		if comparedTypes-otRegexp == 0 {
-			result.Type = otBoolean
+			result.ReducedType = otBoolean
 			result.Bool = false
 			return result, nil
 		}
 		// convert non-regexp part to string and compare
-		if right.Type == otRegexp {
+		if right.ReducedType == otRegexp {
 			toString(left)
 			return doCompareString(op, left, right) // regexp should be second argument
 		}
@@ -196,9 +206,9 @@ func doComparison(op Operator, left *Operand, right *Operand) (*Operand, error) 
 	}
 
 	// [1] 7.2.15 (1)
-	if (op == opStrictEqual || op == opStrictNotEqual) && left.Type != right.Type {
+	if (op == opStrictEqual || op == opStrictNotEqual) && left.ReducedType != right.ReducedType {
 		// strict comparison: types must match
-		result.Type = otBoolean
+		result.ReducedType = otBoolean
 		result.Bool = false
 		return result, nil
 	}
@@ -223,7 +233,7 @@ func doLogic(op Operator, left *Operand, right *Operand) (*Operand, error) {
 	}
 
 	// logical NOT
-	left.Type = otBoolean
+	left.ReducedType = otBoolean
 	left.Bool = !lval
 	return left, nil
 }
@@ -232,16 +242,17 @@ func doLogic(op Operator, left *Operand, right *Operand) (*Operand, error) {
 func doCompareNumber(op Operator, left *Operand, right *Operand) (*Operand, error) {
 	res := left
 	if math.IsNaN(left.Number) || math.IsNaN(right.Number) { // [1] 7.2.14 (4.h)
-		res.Type = otBoolean
+		res.ReducedType = otBoolean
+		res.Bool = false
 		return res, nil
 	}
 	if math.IsInf(left.Number, -1) || math.IsInf(right.Number, +1) { // [1] 7.2.14 (4.i)
-		res.Type = otBoolean
+		res.ReducedType = otBoolean
 		res.Bool = true
 		return res, nil
 	}
 	if math.IsInf(left.Number, +1) || math.IsInf(right.Number, -1) { // [1] 7.2.14 (4.j)
-		res.Type = otBoolean
+		res.ReducedType = otBoolean
 		res.Bool = false
 		return res, nil
 	}
@@ -259,7 +270,7 @@ func doCompareNumber(op Operator, left *Operand, right *Operand) (*Operand, erro
 	case opLE:
 		res.Bool = left.Number <= right.Number
 	}
-	res.Type = otBoolean
+	res.ReducedType = otBoolean
 	return res, nil
 }
 
@@ -286,19 +297,19 @@ func doCompareString(op Operator, left *Operand, right *Operand) (*Operand, erro
 	default:
 		return res, errUnknownToken
 	}
-	res.Type = otBoolean
+	res.ReducedType = otBoolean
 	return res, nil
 }
 
 // toString converts operand to string following JavaScript conversion rules.
 func toString(op *Operand) *Operand {
-	if op.Type == otString {
+	if op.ReducedType == otString {
 		return op
 	}
 
 	result := op
 
-	switch op.Type {
+	switch op.ReducedType {
 	case otUndefined:
 		result.Str = []byte("undefined")
 	case otNull:
@@ -312,20 +323,20 @@ func toString(op *Operand) *Operand {
 	case otNumber:
 		result.Str = []byte(strconv.FormatFloat(op.Number, 'f', -1, 64))
 	}
-	result.Type = otString
+	result.ReducedType = otString
 
 	return result
 }
 
 // toNumber converts operand to number following JavaScript conversion rules. See [1] 7.1.4
 func toNumber(op *Operand) *Operand {
-	if op.Type == otNumber {
+	if op.ReducedType == otNumber {
 		return op
 	}
 
 	result := op
 
-	switch op.Type {
+	switch op.ReducedType {
 	case otUndefined:
 		result.Number = math.NaN()
 	case otNull:
@@ -349,18 +360,18 @@ func toNumber(op *Operand) *Operand {
 	case otRegexp:
 		result.Number = math.NaN()
 	}
-	result.Type = otNumber
+	result.ReducedType = otNumber
 	return result
 }
 
 // toBoolean converts operand to boolean following JavaScript conversion rules.
 func toBoolean(op *Operand) bool {
-	if op.Type == otBoolean {
+	if op.ReducedType == otBoolean {
 		return op.Bool
 	}
 
 	result := false
-	switch op.Type {
+	switch op.ReducedType {
 	case otUndefined, otNull, otRegexp:
 	case otString:
 		result = len(op.Str) > 0
