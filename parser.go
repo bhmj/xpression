@@ -68,7 +68,7 @@ func Parse(path []byte) ([]*Token, error) {
 		}
 	}
 
-	// pop the rest of the poerators
+	// pop the rest of the operators
 	for result.push(opStack.pop()) != nil {
 	}
 
