@@ -27,6 +27,33 @@ Expression examples:
 `'abc' =~ /a.c/i`  
 `!((false))`
 
+## Usage
+
+```Go
+    // simple expression evaluation (error handling skipped)
+    tokens, err := xpression.Parse([]byte(`5 - 3 * (6-12)`))
+    result, err := xpression.Evaluate(tokens, nil)
+    switch result.Type {
+    case xpression.NumberOperand:
+        fmt.Println(result.Number)
+    default:
+        fmt.Println("unexpected result")
+    }
+
+    // external data in expression (aka variables)
+    foobar := 123
+    varFunc := func(name []byte) (*xpression.Operand, error) {
+        mapper := map[string]*int{
+            `foobar`: &foobar
+        }
+        return xpression.Number(float64(*mapper[string(name)])), nil
+    }
+    tokens, err := xpression.Parse([]byte(`27 / foobar`))
+    result, err := xpression.Evaluate(tokens, varFunc)
+    fmt.Println(result.Number)
+```
+[Run in Go Playground](https://play.golang.com/p/xjS5Tj1_34b)
+
 ## Operators and data types supported
 
 Operators | &nbsp;
