@@ -31,8 +31,8 @@ Expression examples:
 
 ```Go
     // simple expression evaluation (error handling skipped)
-    tokens, err := xpression.Parse([]byte(`5 - 3 * (6-12)`))
-    result, err := xpression.Evaluate(tokens, nil)
+    tokens, _ := xpression.Parse([]byte(`5 - 3 * (6-12)`))
+    result, _ := xpression.Evaluate(tokens, nil)
     switch result.Type {
     case xpression.NumberOperand:
         fmt.Println(result.Number)
@@ -49,11 +49,11 @@ Expression examples:
         xpression.SetNumber(float64(*mapper[string(name)]))
         return nil
     }
-    tokens, err := xpression.Parse([]byte(`27 / foobar`))
-    result, err := xpression.Evaluate(tokens, varFunc)
+    tokens, _ = xpression.Parse([]byte(`27 / foobar`))
+    result, _ = xpression.Evaluate(tokens, varFunc)
     fmt.Println(result.Number)
 ```
-[Run in Go Playground](https://play.golang.com/p/xjS5Tj1_34b)
+[Run in Go Playground](https://play.golang.com/p/QRWqM25sX6_P)
 
 ## Operators and data types supported
 
