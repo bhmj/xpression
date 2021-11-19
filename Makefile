@@ -12,11 +12,13 @@ help:
 	echo ""
 	echo "  <command> is"
 	echo ""
-	echo "    configure     - install tools and dependencies"
+	echo "    configure     - install tools and dependencies (gocyclo and golangci-lint)"
 	echo "    build         - build jsonslice CLI"
 	echo "    run           - run jsonslice CLI"
 	echo "    lint          - run linters"
 	echo "    test          - run tests"
+	echo "    cover         - generate coverage report"
+	echo ""
 
 configure:
 	go install github.com/fzipp/gocyclo/cmd/gocyclo@latest
@@ -37,6 +39,10 @@ lint:
 test: 
 	go test -cover ./...
 	go test -benchmem -bench=.
+
+cover:
+	go test -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out
 
 .PHONY: all configure help build run lint test
 

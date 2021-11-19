@@ -145,17 +145,36 @@ func Test_Expressions(t *testing.T) {
 		{`(123 == "123") == 123`, `false`},
 		// hex numbers
 		{`123 == 0x7b`, `true`},
-		{`123 == 0x7B`, `true`},
+		{`0x7B == 123`, `true`},
+		// infinity comparison
+		{ `1/0 > 0`, `true` },
+		{ `1/0 >= 0`, `true` },
+		{ `1/0 > 1/0`, `false` },
+		{ `1/0 < 1/0`, `false` },
+		{ `1/0 >= 1/0`, `true` },
+		{ `1/0 <= 1/0`, `true` },
+		{ `1/0 == 1/0`, `true` },
+		{ `1/0 === 1/0`, `true` },
+		{ `-1/0 < 0`, `true` },
+		{ `-1/0 <= 0`, `true` },
+		{ `-1/0 > -1/0`, `false` },
+		{ `-1/0 < -1/0`, `false` },
+		{ `-1/0 >= -1/0`, `true` },
+		{ `-1/0 <= -1/0`, `true` },
+		{ `-1/0 == -1/0`, `true` },
+		{ `-1/0 === -1/0`, `true` },
 	}
 
-	varFunc := func(str []byte) (*Operand, error) {
+	varFunc := func(str []byte, result *Operand) error {
 		if string(str) == "@.foo" {
-			return Number(123), nil
+			result.SetNumber(123)
+			return nil
 		}
 		if string(str) == "@.foo.length()" {
-			return Number(456), nil
+			result.SetNumber(456)
+			return nil
 		}
-		return nil, errUnknownToken
+		return errUnknownToken
 	}
 
 	l := len(tests)
@@ -217,18 +236,22 @@ func Test_MultipleEvaluation(t *testing.T) {
 	for _, bundle := range testBundles {
 		expression := bundle.Expression
 		for _, tst := range bundle.Probes {
-			varFunc := func(str []byte) (*Operand, error) {
+			varFunc := func(str []byte, result *Operand) error {
 				switch string(tst.Variable) {
 				case "null":
-					return Null(), nil
+					result.SetNull()
+					return nil
 				case `"1"`:
-					return String("1"), nil
+					result.SetString("1")
+					return nil
 				case `"abc"`:
-					return String("abc"), nil
+					result.SetString("abc")
+					return nil
 				case "1":
-					return Number(1), nil
+					result.SetNumber(1)
+					return nil
 				}
-				return nil, errUnknownToken
+				return errUnknownToken
 			}
 
 			tokens, err := Parse([]byte(expression))
@@ -269,6 +292,8 @@ func Test_Errors(t *testing.T) {
 		{`?`, errUnknownToken.Error() + ` at 0: ?`},
 		{`ABC`, errUnknownToken.Error()},
 		{`0x123456789ABCDEF012345`, errTooLongHexadecimal.Error() + ` at 0: 0x123456789ABCDEF012345`},
+		{`1 + @.'foo`, errUnexpectedEndOfString.Error()+` at 6: 'foo`},
+		{`1 + 0xABCDEFG`, errInvalidHexadecimal.Error()+` at 4: 0xABCDEFG`},
 	}
 
 	for _, tst := range tests {

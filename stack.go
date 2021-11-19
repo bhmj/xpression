@@ -21,6 +21,24 @@ func (s *tokenStack) pop() *Token {
 	return value
 }
 
+func (s *tokenStack) pushDouble(empty *Token, tok *Token) *Token {
+	if tok != nil {
+		s.data = append(s.data, empty)
+		s.data = append(s.data, tok)
+	}
+	return tok
+}
+
+func (s *tokenStack) popDouble() (*Token, *Token) {
+	l := len(s.data)
+	if l == 0 {
+		return nil, nil
+	}
+	value := s.data[l-1]
+	s.data = s.data[:l-1]
+	return &Token{}, value
+}
+
 func (s *tokenStack) peek() *Token {
 	l := len(s.data)
 	if l == 0 {
