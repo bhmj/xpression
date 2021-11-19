@@ -17,7 +17,10 @@ const (
 func readNumber(path []byte, i int) (int, *Token, error) {
 	var f float64
 	var err error
-	e, typ := skipNumber(path, i)
+	e, typ, err := skipNumber(path, i)
+	if err != nil {
+		return i, nil, err
+	}
 	switch typ {
 	case numFloat:
 		f, err = strconv.ParseFloat(string(path[i:e]), 64)
@@ -128,7 +131,7 @@ func readVar(path []byte, i int) (int, *Token, error) {
 }
 
 // skipNumber skips number returning its end and type (numFloat or numHex)
-func skipNumber(input []byte, i int) (int, int) {
+func skipNumber(input []byte, i int) (int, int, error) {
 	l := len(input)
 	if input[i] == '0' && i < l-1 && input[i+1] == 'x' {
 		return skipHex(input, i+2)
@@ -147,24 +150,28 @@ func skipNumber(input []byte, i int) (int, int) {
 	if i < l && (input[i] == 'E' || input[i] == 'e') {
 		i++
 	} else {
-		return i, numFloat
+		return i, numFloat, nil
 	}
 	if i < l && (input[i] == '+' || input[i] == '-') {
 		i++
 	}
 	for ; i < l && (input[i] >= '0' && input[i] <= '9'); i++ {
 	}
-	return i, numFloat
+	return i, numFloat, nil
 }
 
 // skipHex skips hexadecimal digits
-func skipHex(input []byte, i int) (int, int) {
+func skipHex(input []byte, i int) (int, int, error) {
+	start := i-2
 	for ; i < len(input); i++ {
 		if !((input[i] >= '0' && input[i] <= '9') || (input[i] >= 'a' && input[i] <= 'f') || (input[i] >= 'A' && input[i] <= 'F')) {
+			if (input[i]>'F' && input[i]<='Z') || (input[i]>'f' && input[i]<='z') {
+				return start, numHex, errInvalidHexadecimal
+			}
 			break
 		}
 	}
-	return i, 1
+	return i, numHex, nil
 }
 
 func skipString(input []byte, i int) (int, error) {

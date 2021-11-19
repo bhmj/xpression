@@ -246,11 +246,16 @@ func doCompareNumber(op Operator, left float64, right float64, result *Operand) 
 		return nil
 	}
 	if math.IsInf(left, -1) || math.IsInf(right, +1) { // [1] 7.2.14 (4.i)
-		result.Bool = true
+		if sameInfinities(left, right) {
+			result.Bool = opEquality(op)
+		} else {
+			result.Bool = opLessNotEqual(op)
+		}
 		return nil
 	}
 	if math.IsInf(left, +1) || math.IsInf(right, -1) { // [1] 7.2.14 (4.j)
-		result.Bool = false
+		// NB: same infinities processed above
+		result.Bool = opGreaterNotEqual(op)
 		return nil
 	}
 	switch op {
@@ -268,6 +273,22 @@ func doCompareNumber(op Operator, left float64, right float64, result *Operand) 
 		result.Bool = left <= right
 	}
 	return nil
+}
+
+func opEquality(op Operator) bool {
+	return op==opEqual || op==opStrictEqual || op==opLE || op==opGE
+}
+
+func opLessNotEqual(op Operator) bool {
+	return op==opL || op==opLE || op==opNotEqual || op==opStrictNotEqual
+}
+
+func opGreaterNotEqual(op Operator) bool {
+	return op==opG || op==opGE || op==opNotEqual || op==opStrictNotEqual
+}
+
+func sameInfinities(left, right float64) bool {
+	return math.IsInf(left, -1) && math.IsInf(right, -1) || math.IsInf(left, +1) && math.IsInf(right, +1)
 }
 
 // doCompareString compares two strings.

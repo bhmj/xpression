@@ -88,10 +88,10 @@ goos: darwin
 goarch: amd64
 pkg: github.com/bhmj/xpression
 cpu: Intel(R) Core(TM) i9-9880H CPU @ 2.30GHz
-Benchmark_ModifiedNumericLiteral_WithParsing-16       2595453    1861 ns/op   1272 B/op   26 allocs/op
-Benchmark_ModifiedNumericLiteral_WithoutParsing-16   72241273   60.66 ns/op      0 B/op    0 allocs/op
+Benchmark_ModifiedNumericLiteral_WithParsing-16       2622770    1811 ns/op   1272 B/op   26 allocs/op
+Benchmark_ModifiedNumericLiteral_WithoutParsing-16   77455698   57.55 ns/op      0 B/op    0 allocs/op
 PASS
-ok      github.com/bhmj/xpression       11.509s
+ok      github.com/bhmj/xpression       11.548s
 ```
 
 The same expression evaluated with [github.com/Knetic/govaluate](https://github.com/Knetic/govaluate) :
