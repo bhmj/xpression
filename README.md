@@ -129,9 +129,9 @@ ok      github.com/Knetic/govaluate     9.810s
 - [x] unary minus supported
 - [x] expression evaluation
 - [x] parser test coverage
-- [x] expression evaluation
 - [x] evaluator test coverage
 - [x] add external reference type (node reference in jsonslice)
+- [ ] optimize memory allocations
 - [ ] Unicode support!
 
 ## Contributing
