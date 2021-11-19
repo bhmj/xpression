@@ -82,28 +82,28 @@ Tests cover the majority of cases described in ECMAScript Language definition (s
 
 Evaluate `(2) + (2) == (4)`
 
-```diff
+```golang
 $ go test -bench=. -benchmem -benchtime=4s
 goos: darwin
 goarch: amd64
 pkg: github.com/bhmj/xpression
 cpu: Intel(R) Core(TM) i9-9880H CPU @ 2.30GHz
-Benchmark_ModifiedNumericLiteral_WithParsing-16        2595453    1861 ns/op    1272 B/op    26 allocs/op
-Benchmark_ModifiedNumericLiteral_WithoutParsing-16    72241273   60.66 ns/op       0 B/op     0 allocs/op
+Benchmark_ModifiedNumericLiteral_WithParsing-16       2595453    1861 ns/op   1272 B/op   26 allocs/op
+Benchmark_ModifiedNumericLiteral_WithoutParsing-16   72241273   60.66 ns/op      0 B/op    0 allocs/op
 PASS
 ok      github.com/bhmj/xpression       11.509s
 ```
 
 The same expression evaluated with [github.com/Knetic/govaluate](https://github.com/Knetic/govaluate) :
 
-```diff
+```golang
 $ go test -bench='LiteralModifiers' -benchmem -benchtime=4s
 goos: darwin
 goarch: amd64
 pkg: github.com/Knetic/govaluate
 cpu: Intel(R) Core(TM) i9-9880H CPU @ 2.30GHz
-BenchmarkEvaluationLiteralModifiers_WithParsing-16     1000000    4019 ns/op    2208 B/op    43 allocs/op
-BenchmarkEvaluationLiteralModifiers-16                30173640   147.2 ns/op       8 B/op     1 allocs/op
+BenchmarkEvaluationLiteralModifiers_WithParsing-16    1000000    4019 ns/op   2208 B/op   43 allocs/op
+BenchmarkEvaluationLiteralModifiers-16               30173640   147.2 ns/op      8 B/op    1 allocs/op
 PASS
 ok      github.com/Knetic/govaluate     9.810s
 ```
