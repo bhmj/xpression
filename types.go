@@ -213,6 +213,34 @@ func (tok *Token) String() string {
 	return "unknown"
 }
 
+func (op *Operand) SetString(s string) {
+	op.Type = otString
+	op.Str = []byte(s)
+}
+
+func (op *Operand) SetNumber(f float64) {
+	op.Type = otNumber
+	op.Number = f
+}
+
+func (op *Operand) SetBoolean(b bool) {
+	op.Type = otBoolean
+	op.Bool = b
+}
+
+func (op *Operand) SetNull() {
+	op.Type = otNull
+}
+
+func (op *Operand) SetUndefined() {
+	op.Type = otUndefined
+}
+
+func (op *Operand) SetRegexp(r *regexp.Regexp) {
+	op.Type = otRegexp
+	op.Regexp = r
+}
+
 func String(s string) *Operand {
 	return &Operand{Type: otString, Str: []byte(s)}
 }

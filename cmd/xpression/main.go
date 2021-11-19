@@ -30,11 +30,13 @@ func main() {
 	}
 }
 
-func variableGetter(variable []byte) (*xpression.Operand, error) {
+func variableGetter(variable []byte, result *xpression.Operand) error {
 	if string(variable) == "@.foobar" {
-		return xpression.Number(123), nil
+		result.SetNumber(123)
+		return nil
 	}
-	return xpression.Boolean(false), nil
+	result.SetBoolean(false)
+	return nil
 }
 
 func printParsedExpression(tokens []*xpression.Token) {

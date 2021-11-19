@@ -148,14 +148,16 @@ func Test_Expressions(t *testing.T) {
 		{`123 == 0x7B`, `true`},
 	}
 
-	varFunc := func(str []byte) (*Operand, error) {
+	varFunc := func(str []byte, result *Operand) error {
 		if string(str) == "@.foo" {
-			return Number(123), nil
+			result.SetNumber(123)
+			return nil
 		}
 		if string(str) == "@.foo.length()" {
-			return Number(456), nil
+			result.SetNumber(456)
+			return nil
 		}
-		return nil, errUnknownToken
+		return errUnknownToken
 	}
 
 	l := len(tests)
@@ -217,18 +219,22 @@ func Test_MultipleEvaluation(t *testing.T) {
 	for _, bundle := range testBundles {
 		expression := bundle.Expression
 		for _, tst := range bundle.Probes {
-			varFunc := func(str []byte) (*Operand, error) {
+			varFunc := func(str []byte, result *Operand) error {
 				switch string(tst.Variable) {
 				case "null":
-					return Null(), nil
+					result.SetNull()
+					return nil
 				case `"1"`:
-					return String("1"), nil
+					result.SetString("1")
+					return nil
 				case `"abc"`:
-					return String("abc"), nil
+					result.SetString("abc")
+					return nil
 				case "1":
-					return Number(1), nil
+					result.SetNumber(1)
+					return nil
 				}
-				return nil, errUnknownToken
+				return errUnknownToken
 			}
 
 			tokens, err := Parse([]byte(expression))

@@ -47,7 +47,7 @@ var (
 	}
 )
 
-type VariableFunc func([]byte) (*Operand, error)
+type VariableFunc func([]byte, *Operand) (error)
 
 // Evaluate evaluates the previously parsed expression
 func Evaluate(tokens []*Token, varFunc VariableFunc) (*Operand, error) {
@@ -64,6 +64,12 @@ func Evaluate(tokens []*Token, varFunc VariableFunc) (*Operand, error) {
 	return op, nil
 }
 
+const (
+	tokenOperand int = 0
+	tokenResult int = 1
+	tokensRest int = 2
+)
+
 // evaluate evaluates expression stored in `tokens` in prefix notation (NPN).
 // Usually it takes an operator from the head of the list and then takes 1 or 2 operands from the list,
 // depending of the operator type (unary or binary).
@@ -73,13 +79,13 @@ func evaluate(tokens []*Token, varFunc VariableFunc) (*Operand, []*Token, error)
 	if len(tokens) == 0 {
 		return nil, nil, errNotEnoughArguments
 	}
-	tok := tokens[0]
+	tok := tokens[tokenOperand]
 	if tok.Category == tcLiteral {
-		return &tok.Operand, tokens[1:], nil
+		return &tok.Operand, tokens[tokenResult:], nil
 	} else if tok.Category == tcVariable {
 		if varFunc != nil {
-			op, err := varFunc(tok.Str)
-			return op, tokens[1:], err
+			err := varFunc(tok.Str, &tokens[tokenResult].Operand)
+			return &tokens[tokenResult].Operand, tokens[tokensRest:], err
 		}
 		return nil, tokens, errUnknownToken
 	}
@@ -88,8 +94,10 @@ func evaluate(tokens []*Token, varFunc VariableFunc) (*Operand, []*Token, error)
 		err   error
 		left  *Operand
 		right *Operand
+		result *Operand
 	)
-	left, tokens, err = evaluate(tokens[1:], varFunc)
+	result = &tokens[tokenResult].Operand
+	left, tokens, err = evaluate(tokens[tokensRest:], varFunc)
 	if err != nil {
 		return nil, tokens, err
 	}
@@ -100,37 +108,36 @@ func evaluate(tokens []*Token, varFunc VariableFunc) (*Operand, []*Token, error)
 		}
 	}
 
-	result, err := execOperator(tok.Operator, left, right)
+	err = execOperator(tok.Operator, left, right, result)
 	return result, tokens, err
 }
 
 // execOperator takes an Operator and one or two Operands (the second one can be `nil` depending on operator type - unary or binary).
 // It does evaluate the expression ("operand1 operator operand2" or "operator operand1") and return Operand which is a typed value.
-func execOperator(op Operator, left *Operand, right *Operand) (*Operand, error) {
+func execOperator(op Operator, left *Operand, right *Operand, result *Operand) error {
 	if bytes.IndexByte(opsArithmetic, byte(op)) != -1 {
 		// arithmetic
-		return doArithmetic(op, left, right)
+		return doArithmetic(op, left, right, result)
 	} else if bytes.IndexByte(opsComparison, byte(op)) != -1 {
 		// comparison
-		return doComparison(op, left, right)
+		return doComparison(op, left, right, result)
 	} else if bytes.IndexByte(opsLogic, byte(op)) != -1 {
 		// logic
-		return doLogic(op, left, right)
+		return doLogic(op, left, right, result)
 	}
-	return nil, errUnknownToken
+	return errUnknownToken
 }
 
 // doArithmetic actually evaluates the arithmetic operators.
 // Note the special case of string concatenation: string + any_type -> string
-func doArithmetic(op Operator, left *Operand, right *Operand) (*Operand, error) {
-	result := Operand{}
+func doArithmetic(op Operator, left *Operand, right *Operand, result *Operand) error {
 	if op == opPlus && (left.Type|right.Type)&otString > 0 {
 		// string concatenation
 		lval := toString(left)
 		rval := toString(right)
 		result.Type = otString
 		result.Str = append(lval[:len(lval):len(lval)], rval...) // cannot use left buffer, must reallocate!
-		return &result, nil
+		return nil
 	}
 
 	switch op {
@@ -162,128 +169,136 @@ func doArithmetic(op Operator, left *Operand, right *Operand) (*Operand, error) 
 		result.Number = float64(int64(toNumber(left)) >> int64(toNumber(right)))
 	}
 	result.Type = otNumber
-	return &result, nil
+	return nil
 }
 
 // doComaparison compares two operands. The special case is string regexp match which works only on strings.
 // Otherwise works like JS comparison.
-func doComparison(op Operator, left *Operand, right *Operand) (*Operand, error) {
+func doComparison(op Operator, left *Operand, right *Operand, result *Operand) error {
 	comparedTypes := left.Type | right.Type
+	result.Type = otBoolean
 
 	// [1] 7.2.14 (2,3)
 	if op == opEqual && comparedTypes&(otNull|otUndefined) > 0 {
 		// at least one side is null or undefined:
-		result := Operand{Type: otBoolean}
 		result.Bool = (comparedTypes | otNull | otUndefined) == (otNull | otUndefined) // both are null or undefined
-		return &result, nil
+		return nil
 	}
 	if op == opRegexMatch || op == opNotRegexMatch {
 		// one of them must be regexp
 		if comparedTypes&otRegexp != otRegexp {
-			return &Operand{Type: otBoolean, Bool: false}, nil
+			result.Bool = false
+			return nil
 		}
 		// other must be non-regexp
 		if comparedTypes-otRegexp == 0 {
-			return &Operand{Type: otBoolean, Bool: false}, nil
+			result.Bool = false
+			return nil
 		}
 		// convert non-regexp part to string and compare
 		if right.Type == otRegexp {
 			lval := toString(left)
-			return doCompareRegexp(op, lval, right.Regexp) // regexp should be second argument
+			return doCompareRegexp(op, lval, right.Regexp, result) // regexp should be second argument
 		}
 		rval := toString(right)
-		return doCompareRegexp(op, rval, left.Regexp) // regexp should be second argument
+		return doCompareRegexp(op, rval, left.Regexp, result) // regexp should be second argument
 	}
 
 	// [1] 7.2.15 (1)
 	if (op == opStrictEqual || op == opStrictNotEqual) && left.Type != right.Type {
 		// strict comparison: types must match
-		return &Operand{Type: otBoolean, Bool: false}, nil
+		result.Bool = false
+		return nil
 	}
 
 	// [1] 7.2.15 (4)
 	if comparedTypes == otString {
-		return doCompareString(op, toString(left), toString(right))
+		return doCompareString(op, toString(left), toString(right), result)
 	}
 
 	// [1] 7.2.14 (5,6,7?,8?)
-	return doCompareNumber(op, toNumber(left), toNumber(right))
+	return doCompareNumber(op, toNumber(left), toNumber(right), result)
 }
 
 // doLogic executes binary logical operators following JavaScript conversion rules.
-func doLogic(op Operator, left *Operand, right *Operand) (*Operand, error) {
+func doLogic(op Operator, left *Operand, right *Operand, result *Operand) error {
 	lval := toBoolean(left)
 	if op == opLogicalAND || op == opLogicalOR {
 		if (op == opLogicalAND && !lval) || (op == opLogicalOR && lval) { // false AND ..., true OR ... -> result!
-			return left, nil
+			*result = *left
+			return nil
 		}
-		return right, nil
+		*result = *right
+		return nil
 	}
 
 	// logical NOT
-	return &Operand{Type: otBoolean, Bool: !lval}, nil
+	result.Type = otBoolean
+	result.Bool = !lval
+	return nil
 }
 
 // doCompareNumber compares two numbers.
-func doCompareNumber(op Operator, left float64, right float64) (*Operand, error) {
-	res := Operand{Type: otBoolean}
+func doCompareNumber(op Operator, left float64, right float64, result *Operand) error {
+	result.Type = otBoolean
 	if math.IsNaN(left) || math.IsNaN(right) { // [1] 7.2.14 (4.h)
-		return &res, nil
+		result.Bool = false
+		return nil
 	}
 	if math.IsInf(left, -1) || math.IsInf(right, +1) { // [1] 7.2.14 (4.i)
-		res.Bool = true
-		return &res, nil
+		result.Bool = true
+		return nil
 	}
 	if math.IsInf(left, +1) || math.IsInf(right, -1) { // [1] 7.2.14 (4.j)
-		res.Bool = false
-		return &res, nil
+		result.Bool = false
+		return nil
 	}
 	switch op {
 	case opG:
-		res.Bool = left > right
+		result.Bool = left > right
 	case opL:
-		res.Bool = left < right
+		result.Bool = left < right
 	case opEqual, opStrictEqual:
-		res.Bool = left == right
+		result.Bool = left == right
 	case opNotEqual, opStrictNotEqual:
-		res.Bool = left != right
+		result.Bool = left != right
 	case opGE:
-		res.Bool = left >= right
+		result.Bool = left >= right
 	case opLE:
-		res.Bool = left <= right
+		result.Bool = left <= right
 	}
-	return &res, nil
+	return nil
 }
 
 // doCompareString compares two strings.
-func doCompareString(op Operator, left []byte, right []byte) (*Operand, error) {
-	res := Operand{Type: otBoolean}
+func doCompareString(op Operator, left []byte, right []byte, result *Operand) error {
+	result.Type = otBoolean
 	switch op {
 	case opEqual, opStrictEqual:
-		res.Bool = compareSlices(left, right) == 0
+		result.Bool = compareSlices(left, right) == 0
 	case opG:
-		res.Bool = compareSlices(left, right) > 0
+		result.Bool = compareSlices(left, right) > 0
 	case opL:
-		res.Bool = compareSlices(left, right) < 0
+		result.Bool = compareSlices(left, right) < 0
 	case opGE:
-		res.Bool = compareSlices(left, right) >= 0
+		result.Bool = compareSlices(left, right) >= 0
 	case opLE:
-		res.Bool = compareSlices(left, right) <= 0
+		result.Bool = compareSlices(left, right) <= 0
 	case opNotEqual, opStrictNotEqual:
-		res.Bool = compareSlices(left, right) != 0
+		result.Bool = compareSlices(left, right) != 0
 	}
-	return &res, nil
+	return nil
 }
 
 // doCompareRegexp matches a string to regexp
-func doCompareRegexp(op Operator, left []byte, right *regexp.Regexp) (*Operand, error) {
-	res := Operand{Type: otBoolean}
+func doCompareRegexp(op Operator, left []byte, right *regexp.Regexp, result *Operand) error {
+	result.Type = otBoolean
 	if op == opRegexMatch {
-		res.Bool = right.MatchString(string(left))
+		result.Bool = right.MatchString(string(left))
 	} else {
-		res.Bool = !right.MatchString(string(left))
+		result.Bool = !right.MatchString(string(left))
 	}
-	return &res, nil
+	return nil
 }
 
 // toString converts operand to string following JavaScript conversion rules.

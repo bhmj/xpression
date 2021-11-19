@@ -30,8 +30,10 @@ func Parse(path []byte) ([]*Token, error) {
 	result := new(tokenStack)
 	for _, token := range reverse(tokens) {
 		switch token.Category {
-		case tcLiteral, tcVariable:
+		case tcLiteral:
 			result.push(token)
+		case tcVariable:
+			result.pushDouble(&Token{}, token)
 		case tcOperator:
 			for {
 				top := opStack.peek()
@@ -45,7 +47,7 @@ func Parse(path []byte) ([]*Token, error) {
 				topPrecedence := operatorDetails[top.Operator].Precedence
 				tokenAssociativity := operatorDetails[token.Operator].Associativity
 				if tokenPrecedence < topPrecedence || (tokenPrecedence == topPrecedence && tokenAssociativity == aRight) {
-					result.push(opStack.pop())
+					result.pushDouble(opStack.popDouble())
 					continue
 				}
 				break
@@ -63,13 +65,13 @@ func Parse(path []byte) ([]*Token, error) {
 					opStack.pop()
 					break
 				}
-				result.push(opStack.pop())
+				result.pushDouble(opStack.popDouble())
 			}
 		}
 	}
 
 	// pop the rest of the operators
-	for result.push(opStack.pop()) != nil {
+	for result.pushDouble(opStack.popDouble()) != nil {
 	}
 
 	return reverse(result.get()), nil

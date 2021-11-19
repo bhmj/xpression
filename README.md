@@ -42,11 +42,12 @@ Expression examples:
 
     // external data in expression (aka variables)
     foobar := 123
-    varFunc := func(name []byte) (*xpression.Operand, error) {
+    varFunc := func(name []byte, result *xpression.Operator) error {
         mapper := map[string]*int{
             `foobar`: &foobar
         }
-        return xpression.Number(float64(*mapper[string(name)])), nil
+        xpression.SetNumber(float64(*mapper[string(name)]))
+        return nil
     }
     tokens, err := xpression.Parse([]byte(`27 / foobar`))
     result, err := xpression.Evaluate(tokens, varFunc)
@@ -87,10 +88,10 @@ goos: darwin
 goarch: amd64
 pkg: github.com/bhmj/xpression
 cpu: Intel(R) Core(TM) i9-9880H CPU @ 2.30GHz
-Benchmark_ModifiedNumericLiteral_WithParsing-16        2714204    1853 ns/op    1272 B/op   26 allocs/op
-Benchmark_ModifiedNumericLiteral_WithoutParsing-16    31129712   143.9 ns/op     128 B/op    2 allocs/op
+Benchmark_ModifiedNumericLiteral_WithParsing-16        2595453    1861 ns/op    1272 B/op    26 allocs/op
+Benchmark_ModifiedNumericLiteral_WithoutParsing-16    72241273   60.66 ns/op       0 B/op     0 allocs/op
 PASS
-ok      github.com/bhmj/xpression       12.363s
+ok      github.com/bhmj/xpression       11.509s
 ```
 
 The same expression evaluated with [github.com/Knetic/govaluate](https://github.com/Knetic/govaluate) :
@@ -110,6 +111,7 @@ ok      github.com/Knetic/govaluate     9.810s
 
 ## Changelog
 
+**0.9.0** (2021-11-19) -- Memory allocation reduced. Speed optimization.  
 **0.8.0** (2021-11-11) -- hex numbers support. Production ready.  
 **0.7.x** (2021-11-11) -- WIP  
 **0.7.0** (2021-11-10) -- project renamed to `xpression`  
@@ -131,7 +133,7 @@ ok      github.com/Knetic/govaluate     9.810s
 - [x] parser test coverage
 - [x] evaluator test coverage
 - [x] add external reference type (node reference in jsonslice)
-- [ ] optimize memory allocations
+- [x] optimize memory allocations
 - [ ] Unicode support!
 
 ## Contributing

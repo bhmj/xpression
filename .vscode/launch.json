@@ -11,7 +11,7 @@
             "mode": "auto",
             "program": "${workspaceFolder}/cmd/xpression/main.go",
             "env": {},
-            "args": ["@.price>10"]
+            "args": ["3-1+2"]
         }
     ]
 }
