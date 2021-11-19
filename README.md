@@ -44,7 +44,7 @@ Expression examples:
     foobar := 123
     varFunc := func(name []byte, result *xpression.Operator) error {
         mapper := map[string]*int{
-            `foobar`: &foobar
+            `foobar`: &foobar,
         }
         xpression.SetNumber(float64(*mapper[string(name)]))
         return nil
