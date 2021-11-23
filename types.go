@@ -44,11 +44,12 @@ const (
 )
 
 const (
-	tcLiteral          TokenCategory = 1 << iota // string, number, bool
-	tcOperator                                   // +-*/^!<=>
-	tcLeftParenthesis                            //
-	tcRightParenthesis                           //
-	tcVariable                                   // @.key etc
+	tcIntermediateResult TokenCategory = 0         // intermediate result placeholder
+	tcLiteral            TokenCategory = 1 << iota // string, number, bool
+	tcOperator                                     // +-*/^!<=>
+	tcLeftParenthesis                              //
+	tcRightParenthesis                             //
+	tcVariable                                     // @.key etc
 )
 
 const (
@@ -202,6 +203,8 @@ func (tok *Token) String() string {
 	}
 
 	switch tok.Category {
+	case tcIntermediateResult:
+		return "IR"
 	case tcLiteral:
 		return tok.Operand.String()
 	case tcOperator:
