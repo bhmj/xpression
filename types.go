@@ -160,7 +160,7 @@ type Operand struct {
 var operatorBound []byte
 
 func init() {
-	operatorBound = []byte{' '}
+	operatorBound = []byte{' ', '['}
 	for _, operator := range operatorSpelling {
 		if !bytein(operator.Spelling[0], operatorBound) {
 			operatorBound = append(operatorBound, operator.Spelling[0])

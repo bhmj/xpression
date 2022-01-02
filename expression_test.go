@@ -147,22 +147,22 @@ func Test_Expressions(t *testing.T) {
 		{`123 == 0x7b`, `true`},
 		{`0x7B == 123`, `true`},
 		// infinity comparison
-		{ `1/0 > 0`, `true` },
-		{ `1/0 >= 0`, `true` },
-		{ `1/0 > 1/0`, `false` },
-		{ `1/0 < 1/0`, `false` },
-		{ `1/0 >= 1/0`, `true` },
-		{ `1/0 <= 1/0`, `true` },
-		{ `1/0 == 1/0`, `true` },
-		{ `1/0 === 1/0`, `true` },
-		{ `-1/0 < 0`, `true` },
-		{ `-1/0 <= 0`, `true` },
-		{ `-1/0 > -1/0`, `false` },
-		{ `-1/0 < -1/0`, `false` },
-		{ `-1/0 >= -1/0`, `true` },
-		{ `-1/0 <= -1/0`, `true` },
-		{ `-1/0 == -1/0`, `true` },
-		{ `-1/0 === -1/0`, `true` },
+		{`1/0 > 0`, `true`},
+		{`1/0 >= 0`, `true`},
+		{`1/0 > 1/0`, `false`},
+		{`1/0 < 1/0`, `false`},
+		{`1/0 >= 1/0`, `true`},
+		{`1/0 <= 1/0`, `true`},
+		{`1/0 == 1/0`, `true`},
+		{`1/0 === 1/0`, `true`},
+		{`-1/0 < 0`, `true`},
+		{`-1/0 <= 0`, `true`},
+		{`-1/0 > -1/0`, `false`},
+		{`-1/0 < -1/0`, `false`},
+		{`-1/0 >= -1/0`, `true`},
+		{`-1/0 <= -1/0`, `true`},
+		{`-1/0 == -1/0`, `true`},
+		{`-1/0 === -1/0`, `true`},
 	}
 
 	varFunc := func(str []byte, result *Operand) error {
@@ -274,6 +274,34 @@ func Test_MultipleEvaluation(t *testing.T) {
 	}
 }
 
+func Test_Variables(t *testing.T) {
+
+	type testPair struct {
+		Expression string
+		Expected   string
+	}
+	testPairs := []testPair{
+		{`@.var`, `@.var`},
+		{`@.var+1`, `@.var`},
+		{`@.var[1]+1`, `@.var[1]`},
+		{`@.var[$.i]+1`, `@.var[$.i]`},
+		{`@.var[$.i+1]+1`, `@.var[$.i+1]`},
+		{`@[1]+@[2]`, `@[1]`},
+		{`@[-1][2]/4`, `@[-1][2]`},
+	}
+
+	for _, pair := range testPairs {
+		_, token, err := readVar([]byte(pair.Expression), 0)
+		if err != nil {
+			t.Errorf(pair.Expression + ": expected `" + pair.Expected + "` but got error `" + err.Error() + "`")
+		} else {
+			if token.String() != pair.Expected {
+				t.Errorf(pair.Expression + ": expected `" + pair.Expected + "` but got `" + token.String() + "`")
+			}
+		}
+	}
+}
+
 func Test_Errors(t *testing.T) {
 
 	tests := []struct {
@@ -292,8 +320,8 @@ func Test_Errors(t *testing.T) {
 		{`?`, errUnknownToken.Error() + ` at 0: ?`},
 		{`ABC`, errUnknownToken.Error()},
 		{`0x123456789ABCDEF012345`, errTooLongHexadecimal.Error() + ` at 0: 0x123456789ABCDEF012345`},
-		{`1 + @.'foo`, errUnexpectedEndOfString.Error()+` at 6: 'foo`},
-		{`1 + 0xABCDEFG`, errInvalidHexadecimal.Error()+` at 4: 0xABCDEFG`},
+		{`1 + @.'foo`, errUnexpectedEndOfString.Error() + ` at 6: 'foo`},
+		{`1 + 0xABCDEFG`, errInvalidHexadecimal.Error() + ` at 4: 0xABCDEFG`},
 	}
 
 	for _, tst := range tests {
