@@ -111,6 +111,7 @@ ok      github.com/Knetic/govaluate     9.810s
 
 ## Changelog
 
+**0.9.1** (2022-01-02) -- Variable bounds refined.  
 **0.9.0** (2021-11-19) -- Memory allocation reduced. Speed optimization.  
 **0.8.0** (2021-11-11) -- hex numbers support. Production ready.  
 **0.7.x** (2021-11-11) -- WIP  

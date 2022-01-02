@@ -113,21 +113,52 @@ func readHex(input []byte) (float64, error) {
 	return float64(signed), nil
 }
 
+// readVar reads variable matching the following "regex":
+//   ([^operatorBound]+(\[[^\[]+]\])*)+
+// which means:
+//   1) a string not containing operatorBound symbols
+//   2) followed by optional sequence of one or more square brackets with any symbols between them
+//   3) possibly repeated again starting from
 func readVar(path []byte, i int) (int, *Token, error) {
 	var err error
 	l := len(path)
 	s := i
-	for i < l && !bytein(path[i], operatorBound) {
-		if path[i] == '\'' || path[i] == '"' {
-			i, err = skipString(path, i)
+	done := false
+	for !done {
+		done = true
+		for i < l && !bytein(path[i], operatorBound) {
+			done = false
+			i, err = skipVarChar(path, i)
 			if err != nil {
-				return i, nil, err // unexpected EOL
+				return i, nil, err
 			}
-		} else {
-			i++
+		}
+		for i < l && path[i] == '[' {
+			for i < l && path[i] != ']' {
+				i, err = skipVarChar(path, i)
+				if err != nil {
+					return i, nil, err
+				}
+			}
+			if path[i] == ']' {
+				i++
+			}
 		}
 	}
 	return i, &Token{Category: tcVariable, Operand: Operand{Type: otVariable, Str: path[s:i]}}, nil
+}
+
+func skipVarChar(path []byte, i int) (int, error) {
+	var err error
+	if path[i] == '\'' || path[i] == '"' {
+		i, err = skipString(path, i)
+		if err != nil {
+			return i, err // unexpected EOL
+		}
+	} else {
+		i++
+	}
+	return i, nil
 }
 
 // skipNumber skips number returning its end and type (numFloat or numHex)
@@ -162,10 +193,10 @@ func skipNumber(input []byte, i int) (int, int, error) {
 
 // skipHex skips hexadecimal digits
 func skipHex(input []byte, i int) (int, int, error) {
-	start := i-2
+	start := i - 2
 	for ; i < len(input); i++ {
 		if !((input[i] >= '0' && input[i] <= '9') || (input[i] >= 'a' && input[i] <= 'f') || (input[i] >= 'A' && input[i] <= 'F')) {
-			if (input[i]>'F' && input[i]<='Z') || (input[i]>'f' && input[i]<='z') {
+			if (input[i] > 'F' && input[i] <= 'Z') || (input[i] > 'f' && input[i] <= 'z') {
 				return start, numHex, errInvalidHexadecimal
 			}
 			break
