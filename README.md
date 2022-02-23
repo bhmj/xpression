@@ -55,7 +55,7 @@ Expression examples:
     result, _ = xpression.EvalVar([]byte(`27 / foobar`), varFunc)
     fmt.Println(result.Number)
 ```
-[Run in Go Playground](https://play.golang.com/p/QRWqM25sX6_P)
+[Run in Go Playground](https://play.golang.com/p/hCRHrEOYQ5p)
 
 ## Operators and data types supported
 
