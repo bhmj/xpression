@@ -47,7 +47,7 @@ var (
 	}
 )
 
-type VariableFunc func([]byte, *Operand) (error)
+type VariableFunc func([]byte, *Operand) error
 
 // Evaluate evaluates the previously parsed expression
 func Evaluate(tokens []*Token, varFunc VariableFunc) (*Operand, error) {
@@ -66,14 +66,14 @@ func Evaluate(tokens []*Token, varFunc VariableFunc) (*Operand, error) {
 
 const (
 	tokenOperand int = 0
-	tokenResult int = 1
-	tokensRest int = 2
+	tokenResult  int = 1
+	tokensRest   int = 2
 )
 
 // evaluate evaluates expression stored in `tokens` in prefix notation (NPN).
 // Usually it takes an operator from the head of the list and then takes 1 or 2 operands from the list,
 // depending of the operator type (unary or binary).
-// The extreme case is when there is only one operand in the list.
+// The edge case is when there is only one operand in the list.
 // This function calls itself recursively to evalute operands if needed.
 func evaluate(tokens []*Token, varFunc VariableFunc) (*Operand, []*Token, error) {
 	if len(tokens) == 0 {
@@ -91,9 +91,9 @@ func evaluate(tokens []*Token, varFunc VariableFunc) (*Operand, []*Token, error)
 	}
 
 	var (
-		err   error
-		left  *Operand
-		right *Operand
+		err    error
+		left   *Operand
+		right  *Operand
 		result *Operand
 	)
 	result = &tokens[tokenResult].Operand
@@ -276,15 +276,15 @@ func doCompareNumber(op Operator, left float64, right float64, result *Operand) 
 }
 
 func opEquality(op Operator) bool {
-	return op==opEqual || op==opStrictEqual || op==opLE || op==opGE
+	return op == opEqual || op == opStrictEqual || op == opLE || op == opGE
 }
 
 func opLessNotEqual(op Operator) bool {
-	return op==opL || op==opLE || op==opNotEqual || op==opStrictNotEqual
+	return op == opL || op == opLE || op == opNotEqual || op == opStrictNotEqual
 }
 
 func opGreaterNotEqual(op Operator) bool {
-	return op==opG || op==opGE || op==opNotEqual || op==opStrictNotEqual
+	return op == opG || op == opGE || op == opNotEqual || op == opStrictNotEqual
 }
 
 func sameInfinities(left, right float64) bool {

@@ -10,7 +10,7 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Printf("Expression evaluator.\nUsage: %[1]s <expression>", filepath.Base(os.Args[0]))
+		fmt.Printf("Expression evaluator.\nUsage: %[1]s <expression>\n", filepath.Base(os.Args[0]))
 		return
 	}
 

@@ -2,7 +2,7 @@
 
 ## What is it?
 
-This project is a renewed version of expression parser/evaluator used in [jsonslice](https://github.com/bhmj/jsonslice). It is still work in progress so use it with caution.
+This project is a renewed version of expression parser/evaluator used in [jsonslice](https://github.com/bhmj/jsonslice). It allows you to evaluate simple arithmetic expressions with variable support.
 
 ## Check it out
 
@@ -31,8 +31,7 @@ Expression examples:
 
 ```Go
     // simple expression evaluation (error handling skipped)
-    tokens, _ := xpression.Parse([]byte(`5 - 3 * (6-12)`))
-    result, _ := xpression.Evaluate(tokens, nil)
+    result, _ := xpression.Eval([]byte(`5 - 3 * (6-12)`))
     switch result.Type {
     case xpression.NumberOperand:
         fmt.Println(result.Number)
@@ -42,15 +41,18 @@ Expression examples:
 
     // external data in expression (aka variables)
     foobar := 123
-    varFunc := func(name []byte, result *xpression.Operator) error {
+    varFunc := func(name []byte, result *xpression.Operand) error {
         mapper := map[string]*int{
             `foobar`: &foobar,
         }
-        xpression.SetNumber(float64(*mapper[string(name)]))
+        ref := mapper[string(name)]
+        if ref == nil {
+            return errors.New("unknown variable")
+        }
+        result.SetNumber(float64(*ref))
         return nil
     }
-    tokens, _ = xpression.Parse([]byte(`27 / foobar`))
-    result, _ = xpression.Evaluate(tokens, varFunc)
+    result, _ = xpression.EvalVar([]byte(`27 / foobar`), varFunc)
     fmt.Println(result.Number)
 ```
 [Run in Go Playground](https://play.golang.com/p/QRWqM25sX6_P)
@@ -111,6 +113,7 @@ ok      github.com/Knetic/govaluate     9.810s
 
 ## Changelog
 
+**0.9.2** (2022-02-23) -- Minor code refactoring. One-liner functions added (Ev al, EvalVar).  
 **0.9.1** (2022-01-02) -- Variable bounds refined.  
 **0.9.0** (2021-11-19) -- Memory allocation reduced. Speed optimization.  
 **0.8.0** (2021-11-11) -- hex numbers support. Production ready.  
@@ -133,9 +136,11 @@ ok      github.com/Knetic/govaluate     9.810s
 - [x] expression evaluation
 - [x] parser test coverage
 - [x] evaluator test coverage
-- [x] add external reference type (node reference in jsonslice)
+- [x] add external reference type aka variable (node reference in jsonslice)
 - [x] optimize memory allocations
-- [ ] Unicode support!
+- [ ] Unicode support
+- [ ] add math functions support (?)
+- [ ] add math/big support (?)
 
 ## Contributing
 

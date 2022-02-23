@@ -113,12 +113,13 @@ func readHex(input []byte) (float64, error) {
 	return float64(signed), nil
 }
 
-// readVar reads variable matching the following "regex":
-//   ([^operatorBound]+(\[[^\[]+]\])*)+
+// readVar reads variable matching the following "regex": ([^operatorBound]+(\[[^\[]+]\])*)+
 // which means:
-//   1) a string not containing operatorBound symbols
-//   2) followed by optional sequence of one or more square brackets with any symbols between them
-//   3) possibly repeated again starting from
+// 1) a string not containing operatorBound symbols;
+// 2) followed by optional sequence of one or more square brackets with any symbols between them;
+// 3) possibly repeated again starting from 1;
+// The variable can start with the following characters: a-z, A-Z, $, @.
+// Examples of valid variables: "@var", "@.var", "var", "var[1]", "@[1]", "var['foo']", "var[1+2]"
 func readVar(path []byte, i int) (int, *Token, error) {
 	var err error
 	l := len(path)
@@ -167,17 +168,19 @@ func skipNumber(input []byte, i int) (int, int, error) {
 	if input[i] == '0' && i < l-1 && input[i+1] == 'x' {
 		return skipHex(input, i+2)
 	}
+	skipDigits := func() {
+		for ; i < l && input[i] >= '0' && input[i] <= '9'; i++ {
+		}
+	}
 	// numbers: -2  0.3  .3  1e2  -0.1e-2
 	// [-][0[.[0]]][e[-]0]
 	if i < l && input[i] == '-' {
 		i++
 	}
-	for ; i < l && input[i] >= '0' && input[i] <= '9'; i++ {
-	}
+	skipDigits()
 	for ; i < l && input[i] == '.'; i++ {
 	}
-	for ; i < l && input[i] >= '0' && input[i] <= '9'; i++ {
-	}
+	skipDigits()
 	if i < l && (input[i] == 'E' || input[i] == 'e') {
 		i++
 	} else {
@@ -186,8 +189,7 @@ func skipNumber(input []byte, i int) (int, int, error) {
 	if i < l && (input[i] == '+' || input[i] == '-') {
 		i++
 	}
-	for ; i < l && (input[i] >= '0' && input[i] <= '9'); i++ {
-	}
+	skipDigits()
 	return i, numFloat, nil
 }
 

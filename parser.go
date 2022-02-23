@@ -5,11 +5,20 @@ import (
 )
 
 func Parse(path []byte) ([]*Token, error) {
+
+	tokens, err := lexer(path)
+	if err != nil {
+		return nil, err
+	}
+
+	return parser(tokens)
+}
+
+func lexer(path []byte) ([]*Token, error) {
 	path = path[:trimSpaces(path)]
 	l := len(path)
 	i := 0
 
-	// lexer
 	tokens := make([]*Token, 0)
 	var tok *Token
 	var err error
@@ -24,8 +33,10 @@ func Parse(path []byte) ([]*Token, error) {
 			tokens = append(tokens, tok)
 		}
 	}
+	return tokens, nil
+}
 
-	//parser
+func parser(tokens []*Token) ([]*Token, error) {
 	opStack := new(tokenStack)
 	result := new(tokenStack)
 	for _, token := range reverse(tokens) {

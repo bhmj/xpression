@@ -13,8 +13,8 @@ help:
 	echo "  <command> is"
 	echo ""
 	echo "    configure     - install tools and dependencies (gocyclo and golangci-lint)"
-	echo "    build         - build jsonslice CLI"
-	echo "    run           - run jsonslice CLI"
+	echo "    build         - build xpression CLI"
+	echo "    run           - run xpression CLI"
 	echo "    lint          - run linters"
 	echo "    test          - run tests"
 	echo "    cover         - generate coverage report"
@@ -33,7 +33,9 @@ run:
 	CGO_ENABLED=0 go run -ldflags "$(LDFLAGS)" -trimpath $(SRC)
 
 lint:
+	echo "------ golangci-lint"
 	golangci-lint run
+	echo "------ gocyclo"
 	gocyclo -over 18 .
 
 test: 
