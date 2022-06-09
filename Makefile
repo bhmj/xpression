@@ -1,5 +1,5 @@
 LDFLAGS ?=-s -w -X main.appVersion=dev-$(shell git rev-parse --short HEAD)-$(shell date +%y-%m-%d)
-OUT ?= ./build
+OUT ?= ./bin
 PROJECT ?=$(shell basename $(PWD))
 SRC ?= ./cmd/$(PROJECT)
 BINARY ?= $(OUT)/$(PROJECT)
@@ -13,8 +13,8 @@ help:
 	echo "  <command> is"
 	echo ""
 	echo "    configure     - install tools and dependencies (gocyclo and golangci-lint)"
-	echo "    build         - build xpression CLI"
-	echo "    run           - run xpression CLI"
+	echo "    build         - build xpression evaluator CLI"
+	echo "    run           - run xpression evaluator CLI"
 	echo "    lint          - run linters"
 	echo "    test          - run tests"
 	echo "    cover         - generate coverage report"

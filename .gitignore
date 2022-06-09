@@ -1,4 +1,4 @@
-/build/*
+/bin/*
 /dist
 .idea/
 __debug_*
