@@ -13,7 +13,7 @@ cd xpression
 
 make build
 
-./build/xpression "1+2"
+./bin/xpression "1+2"
 ````
 
 Expression examples:
@@ -56,6 +56,21 @@ Expression examples:
     fmt.Println(result.Number)
 ```
 [Run in Go Playground](https://play.golang.com/p/hCRHrEOYQ5p)
+
+## xpression CLI
+
+You can find a simple and dumb expression evaluation CLI tool in cmd/xpression.  
+Build it with `make build` and run with `./bin/xpression`.  
+
+Feel free to make your own, better implementation.  
+
+Remember that this evaluator complies with JavaScript rules, so the following example is legitimate and behaves JavaScript-like:  
+```
+> a = 123
+123
+> ("0x" + a) * 2
+582
+```
 
 ## Operators and data types supported
 

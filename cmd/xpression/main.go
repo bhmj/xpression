@@ -1,21 +1,68 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 
 	"github.com/bhmj/xpression"
 )
 
+var (
+	variableAssignment = regexp.MustCompile(`(^\w+)\s*={1}\s*(.*)`)
+	variables          map[string]xpression.Operand
+	verbose            bool
+)
+
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Printf("Expression evaluator.\nUsage: %[1]s <expression>\n", filepath.Base(os.Args[0]))
-		return
+	if len(os.Args) == 2 {
+		switch os.Args[1] {
+		case "--help":
+			fmt.Printf("Expression evaluator.\n")
+			fmt.Printf("Usage: %[1]s [expression]\n  or just run '%[1]s' without arguments for interactive mode.\n", filepath.Base(os.Args[0]))
+			return
+		case "--verbose":
+			verbose = true
+		default:
+			evaluateAndPrint(os.Args[1])
+			return
+		}
 	}
 
-	tokens, err := xpression.Parse([]byte(os.Args[1]))
+	variables = make(map[string]xpression.Operand)
 
+	fmt.Printf("Expression evaluator.\n")
+	fmt.Printf("Run with --verbose parameter to print a NPN stack for each expression.\n")
+	fmt.Printf("You can assign variables using 'var = expression' syntax.\n")
+	fmt.Printf("Example:\n")
+	fmt.Printf("  > pi = 3.1415926536 * 2\n")
+	fmt.Printf("  > pi / 2\n")
+	fmt.Printf("Enter expression or 'q' to quit\n")
+	for {
+		fmt.Print("> ")
+		var input string
+		fmt.Scanln(&input)
+		if input == "q" {
+			break
+		}
+		if !parseVariable(input) {
+			evaluateAndPrint(input)
+		}
+	}
+}
+
+func evaluateAndPrint(str string) {
+	if verbose {
+		evalVerbose(str)
+	} else {
+		evalSilent(str)
+	}
+}
+
+func evalVerbose(str string) {
+	tokens, err := xpression.Parse([]byte(str))
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 	} else {
@@ -30,12 +77,41 @@ func main() {
 	}
 }
 
-func variableGetter(variable []byte, result *xpression.Operand) error {
-	if string(variable) == "@.foobar" {
-		result.SetNumber(123)
-		return nil
+func evalSilent(str string) {
+	result, err := xpression.EvalVar([]byte(str), variableGetter)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+	} else {
+		fmt.Println(result.String())
 	}
-	result.SetBoolean(false)
+}
+
+func parseVariable(str string) bool {
+	matches := variableAssignment.FindStringSubmatch(str)
+	if len(matches) == 0 {
+		return false
+	}
+	varName := matches[1]
+	varValue := matches[2]
+	value, err := xpression.EvalVar([]byte(varValue), variableGetter)
+	if err != nil {
+		fmt.Println(err.Error())
+		return false
+	}
+
+	fmt.Println(value.String())
+
+	variables[varName] = *value
+
+	return true
+}
+
+func variableGetter(variable []byte, result *xpression.Operand) error {
+	val, found := variables[string(variable)]
+	if !found {
+		return errors.New("variable not found")
+	}
+	*result = val
 	return nil
 }
 
