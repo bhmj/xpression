@@ -11,7 +11,8 @@
             "mode": "auto",
             "program": "${workspaceFolder}/cmd/xpression/main.go",
             "env": {},
-            "args": ["0xDEFG + 1"]
+            "console": "integratedTerminal",
+            "args": []
         }
     ]
 }
