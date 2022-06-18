@@ -96,7 +96,7 @@ func parseVariable(str string) bool {
 	value, err := xpression.EvalVar([]byte(varValue), variableGetter)
 	if err != nil {
 		fmt.Println(err.Error())
-		return false
+		return true
 	}
 
 	fmt.Println(value.String())
@@ -109,7 +109,7 @@ func parseVariable(str string) bool {
 func variableGetter(variable []byte, result *xpression.Operand) error {
 	val, found := variables[string(variable)]
 	if !found {
-		return errors.New("variable not found")
+		return errors.New("variable " + string(variable) + " not found")
 	}
 	*result = val
 	return nil
