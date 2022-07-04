@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"os"
@@ -40,10 +41,11 @@ func main() {
 	fmt.Printf("  > pi = 3.1415926536 * 2\n")
 	fmt.Printf("  > pi / 2\n")
 	fmt.Printf("Enter expression or 'q' to quit\n")
+	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Print("> ")
-		var input string
-		fmt.Scanln(&input)
+		scanner.Scan()
+		input := scanner.Text()
 		if input == "q" {
 			break
 		}
