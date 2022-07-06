@@ -8,6 +8,7 @@ import (
 	"math"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 var (
@@ -367,7 +368,16 @@ func toNumber(op *Operand) float64 {
 		if len(op.Str) == 0 { // [1] 7.1.4.1.2 (1)
 			return 0
 		} else {
-			f, err := strconv.ParseFloat(string(op.Str), 64)
+			var f float64
+			var i64 uint64
+			var err error
+			str := string(op.Str)
+			if strings.HasPrefix(str, "0x") || strings.HasPrefix(str, "0X") {
+				i64, err = strconv.ParseUint(str[2:], 16, 64)
+				f = float64(i64)
+			} else {
+				f, err = strconv.ParseFloat(string(op.Str), 64)
+			}
 			if err != nil { // [1] 7.1.4.1.1 (3)
 				return math.NaN()
 			}
