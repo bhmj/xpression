@@ -1,13 +1,13 @@
 package main
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
 
+	"github.com/bhmj/readline"
 	"github.com/bhmj/xpression"
 )
 
@@ -40,12 +40,15 @@ func main() {
 	fmt.Printf("Example:\n")
 	fmt.Printf("  > pi = 3.1415926536 * 2\n")
 	fmt.Printf("  > pi / 2\n")
+	fmt.Printf("\nUse Up or Down to navigate through history\n\n")
 	fmt.Printf("Enter expression or 'q' to quit\n")
-	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Print("> ")
-		scanner.Scan()
-		input := scanner.Text()
+		input, err := readline.Read()
+		if err != nil {
+			fmt.Printf("readline: %v\n", err)
+			break
+		}
 		if input == "q" {
 			break
 		}
