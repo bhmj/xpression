@@ -125,9 +125,24 @@ func readVar(path []byte, i int) (int, *Token, error) {
 	l := len(path)
 	s := i
 	done := false
+	openBracket := 0
 	for !done {
 		done = true
 		for i < l && !bytein(path[i], operatorBound) {
+			// "function" patch: we accept `var()` or even `var(fn())` as a variable,
+			// but assume a non-paired closing bracket as a variable bound: `var)` results in `var`.
+			if path[i] == '(' {
+				openBracket++
+			}
+			if path[i] == ')' {
+				openBracket--
+				if openBracket == 0 {
+					i++
+				}
+				if openBracket <= 0 {
+					break
+				}
+			}
 			done = false
 			i, err = skipVarChar(path, i)
 			if err != nil {
