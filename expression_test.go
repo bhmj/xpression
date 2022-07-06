@@ -274,7 +274,7 @@ func Test_MultipleEvaluation(t *testing.T) {
 	}
 }
 
-func Test_Variables(t *testing.T) {
+func Test_VariableParser(t *testing.T) {
 
 	type testPair struct {
 		Expression string
@@ -345,6 +345,50 @@ func Test_Errors(t *testing.T) {
 		}
 		if !gotError {
 			t.Errorf(tst.Expression + "\n\texpected error `" + string(tst.Expected) + "`\n\tbut got nothing")
+		}
+	}
+}
+
+func Test_Bugfixes(t *testing.T) {
+
+	tests := []struct {
+		Expression string
+		Expected   string
+	}{
+		// all vars are 123
+		{`(0+a)`, "123"},              // closing bracket is a variable bound
+		{`@.foo.length() + 1`, `124`}, // function call brackets are a part of the variable
+		{`@.var(fn()) + 2`, `125`},    // nested function calls are allowed as a part of the variable
+		{`"0x123" * 2`, `582`},        // string containing hex number is converted to number on evaluation
+	}
+
+	varFunc := func(str []byte, result *Operand) error {
+		expectedVars := map[string]int{
+			"a":              123,
+			"@.foo.length()": 123,
+			"@.var(fn())":    123,
+		}
+		v, found := expectedVars[string(str)]
+		if !found {
+			return errUnknownToken
+		}
+		result.SetNumber(float64(v))
+		return nil
+	}
+
+	for _, tst := range tests {
+		tokens, err := Parse([]byte(tst.Expression))
+		if err != nil {
+			t.Errorf(tst.Expression + " : " + err.Error())
+		} else {
+			operand, err := Evaluate(tokens, varFunc)
+			if err != nil {
+				t.Errorf(tst.Expression + " : " + err.Error())
+			}
+			result := operand.String()
+			if result != tst.Expected {
+				t.Errorf(tst.Expression + "\n\texpected `" + string(tst.Expected) + "`\n\tbut got  `" + result + "`")
+			}
 		}
 	}
 }
