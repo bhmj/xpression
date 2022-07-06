@@ -128,6 +128,7 @@ ok      github.com/Knetic/govaluate     9.810s
 
 ## Changelog
 
+**0.9.3** (2022-07-06) -- string to hex convertion fix (`"0x123" * 2`), variable bounded by closing bracket fix (`(0+a)`).  
 **0.9.2** (2022-02-23) -- Minor code refactoring. One-liner functions added (Eval, EvalVar).  
 **0.9.1** (2022-01-02) -- Variable bounds refined.  
 **0.9.0** (2021-11-19) -- Memory allocation reduced. Speed optimization.  
