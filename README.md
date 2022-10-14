@@ -50,7 +50,7 @@ Expression examples:
     result, _ = xpression.EvalVar([]byte(`27 / foobar`), varFunc)
     fmt.Println(result.String())
 ```
-[Run in Go Playground](https://play.golang.com/p/hCRHrEOYQ5p)
+[Run in Go Playground](https://play.golang.com/p/5gqKN1DkCXp)
 
 ## xpression CLI
 
