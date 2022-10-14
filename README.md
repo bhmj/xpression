@@ -32,12 +32,7 @@ Expression examples:
 ```Go
     // simple expression evaluation (error handling skipped)
     result, _ := xpression.Eval([]byte(`5 - 3 * (6-12)`))
-    switch result.Type {
-    case xpression.NumberOperand:
-        fmt.Println(result.Number)
-    default:
-        fmt.Println("unexpected result")
-    }
+    fmt.Println(result.String())
 
     // external data in expression (aka variables)
     foobar := 123
@@ -53,7 +48,7 @@ Expression examples:
         return nil
     }
     result, _ = xpression.EvalVar([]byte(`27 / foobar`), varFunc)
-    fmt.Println(result.Number)
+    fmt.Println(result.String())
 ```
 [Run in Go Playground](https://play.golang.com/p/hCRHrEOYQ5p)
 
