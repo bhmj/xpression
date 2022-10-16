@@ -5,20 +5,26 @@ SRC ?= ./cmd/$(PROJECT)
 BINARY ?= $(OUT)/$(PROJECT)
 PREFIX ?= manual
 
+define USAGE
+
+Usage: make <target>
+
+some of the <targets> are:
+
+  configure     - install tools and dependencies (gocyclo and golangci-lint)
+  build         - build xpression evaluator CLI
+  run           - run xpression evaluator CLI
+  lint          - run linters
+  test          - run tests
+  cover         - generate coverage report
+
+endef
+export USAGE
+
 all: configure build lint test
 
 help:
-	echo "usage: make <command>"
-	echo ""
-	echo "  <command> is"
-	echo ""
-	echo "    configure     - install tools and dependencies (gocyclo and golangci-lint)"
-	echo "    build         - build xpression evaluator CLI"
-	echo "    run           - run xpression evaluator CLI"
-	echo "    lint          - run linters"
-	echo "    test          - run tests"
-	echo "    cover         - generate coverage report"
-	echo ""
+	echo "$$USAGE"
 
 configure:
 	go install github.com/fzipp/gocyclo/cmd/gocyclo@latest

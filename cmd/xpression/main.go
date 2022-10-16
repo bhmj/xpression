@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	variableAssignment = regexp.MustCompile(`(^\w+)\s*={1}\s*(.*)`)
+	variableAssignment = regexp.MustCompile(`(^\w+)\s*=\s*([^=~].*)`)
 	variables          map[string]xpression.Operand
 	verbose            bool
 )
@@ -52,8 +52,10 @@ func main() {
 		if input == "q" {
 			break
 		}
-		if !parseVariable(input) {
-			evaluateAndPrint(input)
+		if input != "" {
+			if !parseVariable(input) {
+				evaluateAndPrint(input)
+			}
 		}
 	}
 }
