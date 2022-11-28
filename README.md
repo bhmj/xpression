@@ -31,26 +31,50 @@ Expression examples:
 
 ```Go
     // simple expression evaluation (error handling skipped)
-    result, _ := xpression.Eval([]byte(`5 - 3 * (6-12)`))
+    result, _ := xpression.EvalStr(`5-3*(6-12)`)
     fmt.Println(result.String())
 
     // external data in expression (aka variables)
     foobar := 123
+    varMapper := map[string]*int{
+        `foobar`: &foobar,
+    }
     varFunc := func(name []byte, result *xpression.Operand) error {
-        mapper := map[string]*int{
-            `foobar`: &foobar,
-        }
-        ref := mapper[string(name)]
+        ref := varMapper[string(name)]
         if ref == nil {
             return errors.New("unknown variable")
         }
         result.SetNumber(float64(*ref))
         return nil
     }
-    result, _ = xpression.EvalVar([]byte(`27 / foobar`), varFunc)
+    result, _ = xpression.EvalVarStr(`27 / foobar`, varFunc)
     fmt.Println(result.String())
 ```
-[Run in Go Playground](https://play.golang.com/p/5gqKN1DkCXp)
+[Run in Go Playground](https://play.golang.com/p/YaweDHqUJKa)
+
+## Functions
+
+```Go
+func Eval(expression []byte) (*Operand, error)
+```
+Eval evaluates expression and returns the result. No external variables used. See EvalVar for more.
+Returns a pointer to Operand or error.
+Use Operand's method `.String()` to get a serializable value or see Operand's `.OperandType` field to determine the result type and get the value from `.Str`, `.Number` or `.Bool` field.
+
+```Go
+func EvalVar(expression []byte, varFunc VariableFunc) (*Operand, error)
+```
+`EvalVar` evaluates expression and returns the result. External variables can be used via `varFunc`.
+
+```Go
+func EvalStr(expression string) (*Operand, error)
+```
+Same as `Eval` but receives a `string` instean of `[]byte`.
+
+```Go
+func EvalVarStr(expression string, varFunc VariableFunc) (*Operand, error)
+```
+Same as `EvalVar` but receives a `string` instean of `[]byte`.
 
 ## xpression CLI
 
@@ -123,6 +147,7 @@ ok      github.com/Knetic/govaluate     9.810s
 
 ## Changelog
 
+**0.9.4** (2022-11-28) -- Go 1.19 support. `EvalStr` and `EvalVarStr` helper functions added.  
 **0.9.3** (2022-07-06) -- bugfixes: string to hex conversion `"0x123"*2`, closing bracket after a variable `(0+a)`.  
 **0.9.2** (2022-02-23) -- Minor code refactoring. One-liner functions added (Eval, EvalVar).  
 **0.9.1** (2022-01-02) -- Variable bounds refined.  
