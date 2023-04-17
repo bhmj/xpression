@@ -69,12 +69,12 @@ func EvalVar(expression []byte, varFunc VariableFunc) (*Operand, error)
 ```Go
 func EvalStr(expression string) (*Operand, error)
 ```
-Same as `Eval` but receives a `string` instean of `[]byte`.
+Same as `Eval` but receives a `string` instead of `[]byte`.
 
 ```Go
 func EvalVarStr(expression string, varFunc VariableFunc) (*Operand, error)
 ```
-Same as `EvalVar` but receives a `string` instean of `[]byte`.
+Same as `EvalVar` but receives a `string` instead of `[]byte`.
 
 ## xpression CLI
 
